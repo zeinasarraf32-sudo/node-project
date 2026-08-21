@@ -10,10 +10,13 @@ export default function Navbar() {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    const token = localStorage.getItem('token');
     const authStatus = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(authStatus);
+    setIsLoggedIn(Boolean(token || authStatus));
   }, [pathname]);
 
   const authNavItems = [
@@ -29,16 +32,23 @@ export default function Navbar() {
 
   const handleSignOut = () => {
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token');
     setIsLoggedIn(false);
     setDropdownOpen(false);
     router.push('/');
   };
 
+  // 1. Force public view if on public routes (Landing '/' or Login '/login')
+  const isPublicPage = pathname === '/' || pathname === '/login';
+
+  // 2. Only show auth nav if mounted, logged in, AND not on a public page
+  const showAuthenticatedNav = mounted && isLoggedIn && !isPublicPage;
+
   return (
     <nav className="nav-header">
       <div className="nav-container">
         {/* Brand Logo */}
-        <Link href={isLoggedIn ? '/dashboard' : '/'} className="flex items-center gap-2">
+        <Link href={showAuthenticatedNav ? '/dashboard' : '/'} className="flex items-center gap-2">
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-sm">
             <Heart className="w-5 h-5 fill-white" />
           </div>
@@ -49,7 +59,7 @@ export default function Navbar() {
 
         {/* Navigation Links */}
         <div className="nav-pill-container">
-          {(isLoggedIn ? authNavItems : publicNavItems).map((item) => {
+          {(showAuthenticatedNav ? authNavItems : publicNavItems).map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
@@ -64,7 +74,7 @@ export default function Navbar() {
         </div>
 
         {/* Right Side Controls */}
-        {isLoggedIn ? (
+        {showAuthenticatedNav ? (
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}

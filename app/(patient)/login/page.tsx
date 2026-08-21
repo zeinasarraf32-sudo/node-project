@@ -1,7 +1,26 @@
+'use client';
+
+import { Suspense } from 'react';
 import { Heart } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import AuthCard from '@/components/login/AuthCard';
 
-export default function LoginPage() {
+function LoginContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Reads the parameter passed from DoctorCard (e.g., /booking/123)
+  // Falls back to /dashboard if no redirect path is provided
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+
+  const handleLoginSuccess = () => {
+    // 1. Set dummy auth state (or update your auth context/store here)
+    localStorage.getItem('token') || localStorage.setItem('token', 'authenticated');
+
+    // 2. Redirect to the original destination page
+    router.push(redirectTo);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50/50 to-slate-50 flex flex-col items-center justify-center p-4">
       {/* Brand Header */}
@@ -17,7 +36,7 @@ export default function LoginPage() {
       </div>
 
       {/* Auth Card Component */}
-      <AuthCard />
+      <AuthCard {...{ handleLoginSuccess }} />
 
       {/* Footer Switcher */}
       <p className="text-sm text-gray-500 mt-6">
@@ -27,5 +46,13 @@ export default function LoginPage() {
         </button>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

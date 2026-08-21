@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
-export default function AuthCard() {
+interface AuthCardProps {
+  handleLoginSuccess?: () => void;
+}
+
+export default function AuthCard({ handleLoginSuccess }: AuthCardProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [showPassword, setShowPassword] = useState(false);
@@ -12,10 +16,20 @@ export default function AuthCard() {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
+  const handleAuth = () => {
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('token', 'authenticated');
+
+    if (handleLoginSuccess) {
+      handleLoginSuccess();
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('isLoggedIn', 'true');
-    router.push('/dashboard'); 
+    handleAuth();
   };
 
   return (
@@ -41,10 +55,7 @@ export default function AuthCard() {
       {/* Google Auth Button */}
       <button
         type="button"
-        onClick={() => {
-          localStorage.setItem('isLoggedIn', 'true');
-          router.push('/dashboard');
-        }}
+        onClick={handleAuth}
         className="btn-social"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">

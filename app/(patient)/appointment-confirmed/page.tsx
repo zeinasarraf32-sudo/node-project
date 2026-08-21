@@ -1,4 +1,5 @@
 'use client';
+
 import Link from "next/link";
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
@@ -37,7 +38,7 @@ export default function AppointmentsPage() {
   return (
     <div className="space-y-8 pb-16">
       {/* Header */}
-      <Link href="/">
+      <Link href="/" className="text-sm font-medium text-blue-600 hover:underline">
         Back to Home
       </Link>
       <div className="flex items-center justify-between">
@@ -45,10 +46,13 @@ export default function AppointmentsPage() {
           <h1 className="text-3xl font-bold text-gray-900">My Appointments</h1>
           <p className="text-gray-500 text-sm mt-1">Manage all your medical appointments</p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-sm transition">
+        <Link
+          href="/booking/1"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition shadow-sm"
+        >
           <Plus className="w-5 h-5" />
           Book New
-        </button>
+        </Link>
       </div>
 
       {/* Metrics Grid */}

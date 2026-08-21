@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Calendar, Clock } from 'lucide-react';
 
 export default function UpcomingCard() {
@@ -33,12 +34,18 @@ export default function UpcomingCard() {
       </div>
 
       <div className="flex items-center gap-3 pt-2">
-        <button className="flex-1 bg-white hover:bg-blue-50 text-blue-600 font-semibold py-3 rounded-2xl text-sm transition">
+        <Link
+          href="/appointment-confirmed"
+          className="flex-1 bg-white hover:bg-blue-50 text-blue-600 font-semibold py-3 rounded-2xl text-sm transition text-center"
+        >
           View Details
-        </button>
-        <button className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-3 rounded-2xl text-sm transition">
+        </Link>
+        <Link
+          href="/book"
+          className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-3 rounded-2xl text-sm transition text-center"
+        >
           Reschedule
-        </button>
+        </Link>
       </div>
     </div>
   );

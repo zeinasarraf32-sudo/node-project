@@ -21,8 +21,10 @@ export default function Navbar() {
 
   const authNavItems = [
     { label: 'Dashboard', href: '/dashboard' },
+    { label: 'AI assistant' , href: '/AIassistant'},
     { label: 'Find Doctors', href: '/doctors' },
-    { label: 'My Appointments', href: '/appointment-confirmed' },
+    { label: 'My Appointments', href: '/appointment-confirmed' }
+    
   ];
 
   const publicNavItems = [

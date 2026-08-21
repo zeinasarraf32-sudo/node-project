@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 interface AuthCardProps {
-  handleLoginSuccess?: () => void;
+  handleLoginSuccess?: (email: string) => void;
 }
 
 export default function AuthCard({ handleLoginSuccess }: AuthCardProps) {
@@ -17,13 +17,21 @@ export default function AuthCard({ handleLoginSuccess }: AuthCardProps) {
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleAuth = () => {
+    const cleanEmail = email.trim().toLowerCase();
+    const isAdmin = cleanEmail === 'admin@gmail.com';
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('token', 'authenticated');
+    localStorage.setItem('role', isAdmin ? 'admin' : 'patient');
 
     if (handleLoginSuccess) {
-      handleLoginSuccess();
+      handleLoginSuccess(email);
     } else {
-      router.push('/dashboard');
+       // 3. توجيه افتراضي في حال عدم وجود دالة أب
+       if (isAdmin) {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     }
   };
 
@@ -106,7 +114,7 @@ export default function AuthCard({ handleLoginSuccess }: AuthCardProps) {
             />
           </div>
           <p className="text-xs text-gray-400 mt-1.5 font-medium">
-            Tip: use "@..." for a valid email
+            Tip: use "admin@gmail.com" for Admin Dashboard
           </p>
         </div>
 

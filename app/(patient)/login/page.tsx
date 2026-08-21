@@ -13,12 +13,19 @@ function LoginContent() {
   // Falls back to /dashboard if no redirect path is provided
   const redirectTo = searchParams.get('redirectTo') || '/dashboard';
 
-  const handleLoginSuccess = () => {
-    // 1. Set dummy auth state (or update your auth context/store here)
+  // نمرر الإيميل المدخل إلى الدالة
+  const handleLoginSuccess = (email: string) => {
+    // 1. Set dummy auth state
     localStorage.getItem('token') || localStorage.setItem('token', 'authenticated');
 
-    // 2. Redirect to the original destination page
-    router.push(redirectTo);
+    // 2. فحص هل المستخدم أدمن أم مريض
+    if (email.trim().toLowerCase() === 'admin@gmail.com') {
+      localStorage.setItem('role', 'admin');
+      router.push('/admin'); // توجيه الأدمن للوحة التحكم
+    } else {
+      localStorage.setItem('role', 'patient');
+      router.push(redirectTo); // توجيه المريض لوجهته المحددة
+    }
   };
 
   return (
@@ -36,7 +43,7 @@ function LoginContent() {
       </div>
 
       {/* Auth Card Component */}
-      <AuthCard {...{ handleLoginSuccess }} />
+      <AuthCard handleLoginSuccess={handleLoginSuccess} />
 
       {/* Footer Switcher */}
       <p className="text-sm text-gray-500 mt-6">

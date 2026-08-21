@@ -1,3 +1,4 @@
+
 datasource db {
   provider = "postgresql" // Or "mysql" / "sqlite"
   url      = env("DATABASE_URL")

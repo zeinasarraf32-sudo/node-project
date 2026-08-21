@@ -18,7 +18,6 @@ export default function DoctorFilters({
   setSelectedSpecialty,
 }: DoctorFiltersProps) {
   return (
-    /* flex-wrap تجعل التخصصات تنزل لسطر جديد وتظهر كاملة على الموبايل */
     <div className="flex flex-wrap items-center gap-2 my-3 w-full">
       {SPECIALTIES.map((specialty) => {
         const isActive = selectedSpecialty === specialty;

@@ -9,22 +9,18 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Reads the parameter passed from DoctorCard (e.g., /booking/123)
-  // Falls back to /dashboard if no redirect path is provided
   const redirectTo = searchParams.get('redirectTo') || '/dashboard';
 
-  // نمرر الإيميل المدخل إلى الدالة
   const handleLoginSuccess = (email: string) => {
     // 1. Set dummy auth state
     localStorage.getItem('token') || localStorage.setItem('token', 'authenticated');
 
-    // 2. فحص هل المستخدم أدمن أم مريض
     if (email.trim().toLowerCase() === 'admin@gmail.com') {
       localStorage.setItem('role', 'admin');
-      router.push('/admin'); // توجيه الأدمن للوحة التحكم
+      router.push('/admin'); 
     } else {
       localStorage.setItem('role', 'patient');
-      router.push(redirectTo); // توجيه المريض لوجهته المحددة
+      router.push(redirectTo);
     }
   };
 

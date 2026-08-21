@@ -1,6 +1,7 @@
 'use client';
 
-import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, Clock, MapPin, User, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { Doctor } from './DoctorSelector';
 
@@ -21,8 +22,21 @@ export default function BookingSummary({
   insuranceDiscount,
   onConfirm,
 }: BookingSummaryProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const totalDue = doctor.fee - insuranceDiscount;
   const isReadyToBook = selectedDate !== null && selectedTime !== null;
+
+  const handleConfirmClick = () => {
+    if (!isReadyToBook) return;
+
+    // 1. تفعيل حالة التحميل
+    setIsSubmitting(true);
+
+    // 2. الانتظار لمدة ثانية واحدة لمحاكاة معالجة البيانات ثم تنفيذ التوجيه
+    setTimeout(() => {
+      onConfirm();
+    }, 1000);
+  };
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-6 sticky top-24">
@@ -103,15 +117,22 @@ export default function BookingSummary({
       <div className="space-y-3">
         <button
           type="button"
-          disabled={!isReadyToBook}
-          onClick={onConfirm}
-          className={`w-full py-3.5 px-4 rounded-xl font-bold transition text-sm ${
-            isReadyToBook
+          disabled={!isReadyToBook || isSubmitting}
+          onClick={handleConfirmClick}
+          className={`w-full py-3.5 px-4 rounded-xl font-bold transition text-sm flex items-center justify-center gap-2 ${
+            isReadyToBook && !isSubmitting
               ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
               : 'bg-blue-200 text-white cursor-not-allowed'
           }`}
         >
-          Confirm Appointment
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Confirming...</span>
+            </>
+          ) : (
+            <span>Confirm Appointment</span>
+          )}
         </button>
         <p className="text-center text-xs text-gray-400 font-medium">
           Free cancellation up to 24h before appointment

@@ -17,7 +17,6 @@ export default function AppointmentCard({ appointment }: { appointment: Appointm
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
-      {/* Top Row: Doctor Info & Status */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <img
@@ -45,7 +44,6 @@ export default function AppointmentCard({ appointment }: { appointment: Appointm
         </div>
       </div>
 
-      {/* Details Row */}
       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 pt-1">
         <div className="flex items-center gap-1.5">
           <Calendar className="w-4 h-4 text-gray-400" />
@@ -70,7 +68,6 @@ export default function AppointmentCard({ appointment }: { appointment: Appointm
         </div>
       </div>
 
-      {/* Actions Row */}
       <div className="flex items-center gap-3 pt-2">
         {appointment.type === 'telehealth' ? (
           <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm transition">

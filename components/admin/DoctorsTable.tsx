@@ -75,7 +75,6 @@ export default function DoctorsTable() {
         />
       </div>
 
-      {/* Main Table Card */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -104,13 +103,10 @@ export default function DoctorsTable() {
                     </div>
                   </td>
 
-                  {/* Specialty */}
                   <td className="py-3.5 px-6 text-slate-500 font-medium">{doc.specialty}</td>
 
-                  {/* Patients Count */}
                   <td className="py-3.5 px-6 font-bold text-slate-800">{doc.patients}</td>
 
-                  {/* Rating */}
                   <td className="py-3.5 px-6">
                     <div className="flex items-center gap-1 font-semibold text-slate-700">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -118,7 +114,6 @@ export default function DoctorsTable() {
                     </div>
                   </td>
 
-                  {/* Status Badge */}
                   <td className="py-3.5 px-6">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
@@ -131,7 +126,6 @@ export default function DoctorsTable() {
                     </span>
                   </td>
 
-                  {/* Actions */}
                   <td className="py-3.5 px-6 text-right">
                     <div className="flex items-center justify-end gap-2 text-slate-400">
                       <button className="p-1 hover:text-slate-600 transition-colors">

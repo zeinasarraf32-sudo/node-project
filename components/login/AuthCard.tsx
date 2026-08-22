@@ -26,7 +26,6 @@ export default function AuthCard({ handleLoginSuccess }: AuthCardProps) {
     if (handleLoginSuccess) {
       handleLoginSuccess(email);
     } else {
-       // 3. توجيه افتراضي في حال عدم وجود دالة أب
        if (isAdmin) {
         router.push('/admin');
       } else {
@@ -118,7 +117,6 @@ export default function AuthCard({ handleLoginSuccess }: AuthCardProps) {
           </p>
         </div>
 
-        {/* Password Field */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             Password
@@ -143,7 +141,6 @@ export default function AuthCard({ handleLoginSuccess }: AuthCardProps) {
           </div>
         </div>
 
-        {/* Remember Me & Forgot Password */}
         <div className="flex items-center justify-between text-sm pt-1">
           <label className="flex items-center gap-2 cursor-pointer text-gray-600">
             <input
@@ -159,7 +156,6 @@ export default function AuthCard({ handleLoginSuccess }: AuthCardProps) {
           </button>
         </div>
 
-        {/* Submit Button */}
         <button type="submit" className="btn-submit">
           {activeTab === 'signin' ? 'Sign In' : 'Create Account'}
           <ArrowRight className="w-4 h-4" />

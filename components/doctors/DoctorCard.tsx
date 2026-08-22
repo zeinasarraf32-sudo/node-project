@@ -1,6 +1,7 @@
 'use client';
 
-import { Star, MapPin, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Star, MapPin, Clock, Loader2, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export interface Doctor {
@@ -18,20 +19,27 @@ export interface Doctor {
 
 export default function DoctorCard({ doctor }: { doctor: Doctor }) {
   const router = useRouter();
+  const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const isAvailableToday = doctor.availabilityStatus === 'Available Today';
 
   const handleBooking = () => {
-    // 1. Check authentication status (e.g. token in localStorage or cookie)
-    // Replace 'token' or 'user' with whatever key you use to store auth state locally
-    const isAuthenticated = typeof window !== 'undefined' && Boolean(localStorage.getItem('token') || localStorage.getItem('user'));
+    setBookingStatus('loading');
 
-    if (isAuthenticated) {
-      // 2. Go straight to booking page with doctor ID
-      router.push(`/booking/${doctor.id}`);
-    } else {
-      // 3. Redirect to login and pass destination as query parameter
-      router.push(`/login?redirectTo=/booking/${doctor.id}`);
-    }
+    setTimeout(() => {
+      setBookingStatus('success');
+
+      setTimeout(() => {
+        const isAuthenticated =
+          typeof window !== 'undefined' &&
+          Boolean(localStorage.getItem('token') || localStorage.getItem('user'));
+
+        if (isAuthenticated) {
+          router.push(`/booking/${doctor.id}`);
+        } else {
+          router.push(`/login?redirectTo=/booking/${doctor.id}`);
+        }
+      }, 600);
+    }, 800);
   };
 
   return (
@@ -73,7 +81,7 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
 
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <MapPin className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate dir-rtl">{doctor.location}</span>
+            <span className="truncate">{doctor.location}</span>
           </div>
 
           <div className="pt-1">
@@ -99,11 +107,30 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
         <button className="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2.5 rounded-xl text-xs transition">
           View Profile
         </button>
+        
+        {/* زر الحجز التفاعلي بدعم حالات Loading و Success */}
         <button
           onClick={handleBooking}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl text-xs transition shadow-sm"
+          disabled={bookingStatus !== 'idle'}
+          className={`flex-1 font-medium py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5 ${
+            bookingStatus === 'success'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-blue-600 hover:bg-blue-700 text-white'
+          }`}
         >
-          Book Now
+          {bookingStatus === 'loading' && (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Booking...</span>
+            </>
+          )}
+          {bookingStatus === 'success' && (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              <span>Redirecting...</span>
+            </>
+          )}
+          {bookingStatus === 'idle' && <span>Book Now</span>}
         </button>
       </div>
     </div>

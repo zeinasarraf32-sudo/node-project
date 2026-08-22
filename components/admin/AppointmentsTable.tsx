@@ -84,7 +84,6 @@ export default function AppointmentsTable() {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
-      {/* Header & Filter Tabs */}
       <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-50">
         <h3 className="text-base font-bold text-slate-800">appointments</h3>
 
@@ -105,7 +104,6 @@ export default function AppointmentsTable() {
         </div>
       </div>
 
-      {/* Table Section */}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -130,13 +128,10 @@ export default function AppointmentsTable() {
                   </div>
                 </td>
 
-                {/* Doctor Name */}
                 <td className="py-4 px-6 text-slate-600 font-medium">{item.doctorName}</td>
 
-                {/* Date & Time */}
                 <td className="py-4 px-6 text-slate-600">{item.dateTime}</td>
 
-                {/* Status Badge */}
                 <td className="py-4 px-6">
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium border ${getStatusBadgeClass(
@@ -147,7 +142,6 @@ export default function AppointmentsTable() {
                   </span>
                 </td>
 
-                {/* Actions */}
                 <td className="py-4 px-6 text-right">
                   <button className="p-1 text-slate-400 hover:text-slate-600 transition-colors">
                     <MoreVertical className="w-4 h-4" />

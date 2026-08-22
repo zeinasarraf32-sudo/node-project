@@ -1,5 +1,5 @@
 'use client';
-import Link from "next/link";
+
 import { useState } from 'react';
 import SearchBar from '@/components/doctors/SearchBar';
 import DoctorFilters from '@/components/doctors/DoctorFilters';
@@ -99,15 +99,13 @@ export default function FindDoctorsPage() {
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Title */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Find Your Doctor</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Browse 6 verified specialists across all medical fields
+          Browse verified specialists across all medical fields
         </p>
       </div>
 
-      {/* Search Bar */}
       <SearchBar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -115,14 +113,16 @@ export default function FindDoctorsPage() {
         setSortBy={setSortBy}
       />
 
-      {/* Filter Pills */}
       <DoctorFilters
         selectedSpecialty={selectedSpecialty}
         setSelectedSpecialty={setSelectedSpecialty}
       />
 
-      {/* Doctors Grid */}
-      <DoctorList doctors={filteredDoctors} />
+      <DoctorList
+        doctors={filteredDoctors}
+        isLoading={false}
+        isError={false}
+      />
 
       {/* Floating AI Widgets */}
       <AIRecommendation />

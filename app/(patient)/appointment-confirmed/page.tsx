@@ -55,14 +55,12 @@ export default function AppointmentsPage() {
         </Link>
       </div>
 
-      {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard count={2} label="Upcoming" colorClass="text-blue-600" />
         <StatCard count={8} label="Completed" colorClass="text-emerald-500" />
         <StatCard count={2} label="Cancelled" colorClass="text-red-500" />
       </div>
 
-      {/* Tab Filter */}
       <div className="inline-flex bg-gray-100/80 p-1.5 rounded-2xl gap-1">
         <button
           onClick={() => setActiveTab('upcoming')}
@@ -86,14 +84,12 @@ export default function AppointmentsPage() {
         </button>
       </div>
 
-      {/* Appointments List */}
       <div className="space-y-4">
         {appointmentsData.map((item) => (
           <AppointmentCard key={item.id} appointment={item} />
         ))}
       </div>
 
-      {/* Floating Buttons */}
       <FloatingWidgets />
     </div>
   );

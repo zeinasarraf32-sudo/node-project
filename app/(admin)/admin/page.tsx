@@ -8,7 +8,7 @@ import AppointmentTrends from "@/components/admin/AppointmentTrends";
 import DoctorWorkload from "@/components/admin/DoctorWorkload";
 import DoctorsTable from "@/components/admin/DoctorsTable";
 import AppointmentsTable from "@/components/admin/AppointmentsTable";
-import PatientsList from "@/components/admin/PatientsList"; // استيراد المكون
+import PatientsList from "@/components/admin/PatientsList"; 
 
 export default function AdminDashboardPage() {
 const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'appointments' | 'patients'>('overview');

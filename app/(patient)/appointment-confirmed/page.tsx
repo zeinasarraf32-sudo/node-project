@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import StatCard from '@/components/appointment/StatCard';
 import AppointmentCard, { Appointment } from '@/components/appointment/AppointmentCard';
 import FloatingWidgets from '@/components/appointment/FloatingWidgets';
+import EmptyState from '@/components/ui/EmptyState'; // 👈 استيراد مكون الـ UI
 
 const appointmentsData: Appointment[] = [
   {
@@ -80,14 +81,22 @@ export default function AppointmentsPage() {
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          Previous (3)
+          Previous (0)
         </button>
       </div>
 
+      {/* عرض البيانات أو حالة القائمة الفارغة شرطياً */}
       <div className="space-y-4">
-        {appointmentsData.map((item) => (
-          <AppointmentCard key={item.id} appointment={item} />
-        ))}
+        {activeTab === 'upcoming' ? (
+          appointmentsData.map((item) => (
+            <AppointmentCard key={item.id} appointment={item} />
+          ))
+        ) : (
+          <EmptyState 
+            title="No Previous Appointments" 
+            description="You have no past completed or cancelled appointments recorded yet." 
+          />
+        )}
       </div>
 
       <FloatingWidgets />

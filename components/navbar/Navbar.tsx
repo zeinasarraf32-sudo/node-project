@@ -48,7 +48,6 @@ export default function Navbar() {
   return (
     <nav className="nav-header relative z-50">
       <div className="nav-container flex items-center justify-between px-4 py-3">
-        {/* Brand Logo */}
         <Link href={showAuthenticatedNav ? '/dashboard' : '/'} className="flex items-center gap-2 shrink-0">
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-sm">
             <Heart className="w-5 h-5 fill-white" />

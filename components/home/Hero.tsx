@@ -20,15 +20,15 @@ export default function Hero() {
         specialist, and book your appointment — all in under 2 minutes.
       </p>
 
-      {/* AI Assistant Container */}
-      <div className="w-full max-w-md my-6">
+      {/* AI Assistant Container - تم تكبير العرض هنا من max-w-md إلى max-w-2xl */}
+      <div className="w-full max-w-2xl my-8">
         <AIAssistant />
       </div>
 
       {/* CTA Button */}
       <a
         href="/doctors"
-        className="inline-flex items-center justify-center px-6 py-3 bg-white text-blue-600 hover:bg-blue-50 font-bold text-sm rounded-xl shadow-md transition-all transform active:scale-95"
+        className="inline-flex items-center justify-center px-8 py-3.5 bg-white text-blue-600 hover:bg-blue-50 font-bold text-base rounded-xl shadow-lg transition-all transform active:scale-95"
       >
         Get Started →
       </a>

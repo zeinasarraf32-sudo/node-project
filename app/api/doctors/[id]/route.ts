@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { DoctorStatus } from '@prisma/client';
+
 import { IDoctor } from '@/interfaces/interfaces';
 
 export async function PUT(

@@ -33,7 +33,7 @@ export default function AddPatientModal({ isOpen, onClose, onAddPatient }: AddPa
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [e.target.value]: e.target.value,
     }));
   };
 
@@ -71,19 +71,26 @@ export default function AddPatientModal({ isOpen, onClose, onAddPatient }: AddPa
 
     onAddPatient(payload);
     setIsSubmitting(false);
+    setFormData({
+      fullName: '',
+      condition: '',
+      lastVisit: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      avatarUrl: '',
+    });
+    setSelectedFileName('');
     onClose();
   };
 
   return (
-    <div className="fixed inset-[#0] z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <h3 className="text-sm font-bold text-slate-800">Add New Patient</h3>
           <button 
             onClick={onClose} 
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors"
+            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -94,7 +101,7 @@ export default function AddPatientModal({ isOpen, onClose, onAddPatient }: AddPa
           
           {/* Avatar Upload */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold text-slate-600">Patient Photo</label>
+            <label className="text-xs font-semibold text-slate-600">Patient Photo</label>
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
                 {formData.avatarUrl ? (
@@ -126,7 +133,7 @@ export default function AddPatientModal({ isOpen, onClose, onAddPatient }: AddPa
                   <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                    className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -137,29 +144,29 @@ export default function AddPatientModal({ isOpen, onClose, onAddPatient }: AddPa
 
           {/* Full Name */}
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-slate-600">Full Name</label>
+            <label className="text-xs font-semibold text-slate-600">Full Name</label>
             <input
               type="text"
               name="fullName"
               required
               value={formData.fullName}
-              onChange={handleChange}
+              onChange={(e) => setFormData((prev) => ({ ...prev, fullName: e.target.value }))}
               placeholder="e.g. Sami Ahmed"
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
 
           {/* Condition */}
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-slate-600">Medical Condition</label>
+            <label className="text-xs font-semibold text-slate-600">Medical Condition</label>
             <input
               type="text"
               name="condition"
               required
               value={formData.condition}
-              onChange={handleChange}
+              onChange={(e) => setFormData((prev) => ({ ...prev, condition: e.target.value }))}
               placeholder="e.g. Hypertension"
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
 
@@ -168,14 +175,14 @@ export default function AddPatientModal({ isOpen, onClose, onAddPatient }: AddPa
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Save Patient</span>

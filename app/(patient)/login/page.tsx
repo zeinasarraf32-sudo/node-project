@@ -1,61 +1,35 @@
 'use client';
 
-import { Suspense } from 'react';
+import Link from 'next/link';
 import { Heart } from 'lucide-react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import AuthCard from '@/components/login/AuthCard';
-
-function LoginContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
-
-  const handleLoginSuccess = (email: string) => {
-    // 1. Set dummy auth state
-    localStorage.getItem('token') || localStorage.setItem('token', 'authenticated');
-
-    if (email.trim().toLowerCase() === 'admin@gmail.com') {
-      localStorage.setItem('role', 'admin');
-      router.push('/admin'); 
-    } else {
-      localStorage.setItem('role', 'patient');
-      router.push(redirectTo);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50/50 to-slate-50 flex flex-col items-center justify-center p-4">
-      {/* Brand Header */}
-      <div className="text-center mb-8 space-y-2">
-        <div className="inline-flex items-center gap-2 mb-2">
-          <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-md">
-            <Heart className="w-6 h-6 fill-white" />
-          </div>
-          <span className="text-2xl font-bold text-gray-900">QuickCare</span>
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-        <p className="text-gray-500 text-sm">Sign in to manage your health appointments</p>
-      </div>
-
-      {/* Auth Card Component */}
-      <AuthCard handleLoginSuccess={handleLoginSuccess} />
-
-      {/* Footer Switcher */}
-      <p className="text-sm text-gray-500 mt-6">
-        Don't have an account?{' '}
-        <button className="text-blue-600 font-semibold hover:underline">
-          Sign Up
-        </button>
-      </p>
-    </div>
-  );
-}
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <LoginContent />
-    </Suspense>
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <Link href="/" className="inline-flex items-center gap-2 mb-4">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md">
+            <Heart className="w-6 h-6 fill-white" />
+          </div>
+
+          <span className="text-2xl font-bold text-gray-900">
+            Quick<span className="text-blue-600">Care</span>
+          </span>
+        </Link>
+
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
+          Welcome to QuickCare
+        </h2>
+
+        <p className="mt-2 text-sm text-gray-600">
+          Sign in or create your account to continue
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <AuthCard />
+      </div>
+    </div>
   );
 }

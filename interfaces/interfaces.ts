@@ -32,3 +32,15 @@ export interface IChatMessage {
   role: "user" | "assistant";
   content: string;
 }
+export interface CreateDoctorBody {
+  fullName: string;
+  email: string;
+  password: string;
+  phone?: string;
+  specialty: string;
+  experienceYrs?: number;
+  consultationFee?: number;
+  location?: string | null;
+  imageUrl?: string;
+  status?: "ACTIVE" | "ON_LEAVE" | "INACTIVE";
+}

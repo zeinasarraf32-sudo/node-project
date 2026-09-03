@@ -23,13 +23,11 @@ export default function FindDoctorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
 
-  // جلب البيانات من الـ API
   const { data: responseData, isLoading, isError, refetch } = useQuery({
     queryKey: ['doctors'],
     queryFn: () => axiosGet<BackendDoctor[]>('doctors'),
   });
 
-  // استخراج مصفوفة الأطباء وتحويلها للشكل الذي يفهمه DoctorCard
   const doctorsList = responseData?.data || [];
   
   const mappedDoctors: Doctor[] = doctorsList.map((doc) => ({

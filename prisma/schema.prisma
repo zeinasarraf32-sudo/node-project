@@ -6,9 +6,91 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==========================================
-// ENUMS
-// ==========================================
+model Patient {
+  id              Int              @id @default(autoincrement())
+  imageUrl        String?
+  condition       String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  email           String           @unique
+  fullName        String
+  password        String
+  phone           String?
+  aiConversations AiConversation[]
+  appointments    Appointment[]
+  reviews         DoctorReview[]
+}
+
+model Doctor {
+  id              Int              @id @default(autoincrement())
+  specialty       String
+  experienceYrs   Int              @default(0)
+  consultationFee Float            @default(0.0)
+  location        String?
+  imageUrl        String?
+  status          DoctorStatus     @default(ACTIVE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  email           String           @unique
+  fullName        String
+  password        String
+  phone           String?
+  aiConversations AiConversation[]
+  appointments    Appointment[]
+  reviews         DoctorReview[]
+  schedules       DoctorSchedule[]
+}
+
+model DoctorSchedule {
+  id                  Int      @id @default(autoincrement())
+  doctorId            Int
+  dayOfWeek           Int
+  startTime           String
+  endTime             String
+  slotDurationMinutes Int      @default(30)
+  createdAt           DateTime @default(now())
+  doctor              Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id        Int               @id @default(autoincrement())
+  patientId Int
+  doctorId  Int
+  date      DateTime
+  time      String
+  reason    String
+  status    AppointmentStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  doctor    Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient   Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, date, time])
+}
+
+model DoctorReview {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  doctorId  Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, doctorId])
+}
+
+model AiConversation {
+  id                  Int      @id @default(autoincrement())
+  patientId           Int
+  recommendedDoctorId Int?
+  userInput           String
+  aiResponse          String
+  createdAt           DateTime @default(now())
+  patient             Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  recommendedDoctor   Doctor?  @relation(fields: [recommendedDoctorId], references: [id])
+}
 
 enum AppointmentStatus {
   PENDING
@@ -21,134 +103,4 @@ enum DoctorStatus {
   ACTIVE
   ON_LEAVE
   INACTIVE
-}
-
-// ==========================================
-// PATIENT
-// ==========================================
-
-model Patient {
-  id              Int          @id @default(autoincrement())
-  fullName        String
-  email           String       @unique
-  phone           String?
-  password        String
-  imageUrl        String?      
-  condition       String?      
-
-  appointments    Appointment[]
-  reviews         DoctorReview[]
-  aiConversations AiConversation[]
-
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-}
-
-// ==========================================
-// DOCTOR
-// ==========================================
-
-model Doctor {
-  id              Int          @id @default(autoincrement())
-  fullName        String
-  email           String       @unique
-  phone           String?
-  password        String
-  specialty       String
-  experienceYrs   Int          @default(0)
-  consultationFee Float        @default(0.0)
-  location        String?
-  imageUrl        String      
-  status          DoctorStatus @default(ACTIVE)
-
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  // Relationships
-  appointments    Appointment[]
-  schedules       DoctorSchedule[]
-  reviews         DoctorReview[]
-  aiConversations AiConversation[]
-}
-
-// ==========================================
-// DOCTOR SCHEDULE
-// ==========================================
-
-model DoctorSchedule {
-  id                  Int      @id @default(autoincrement())
-  doctorId            Int
-
-  doctor              Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-
-  dayOfWeek           Int
-  startTime           String
-  endTime             String
-  slotDurationMinutes Int      @default(30)
-
-  createdAt           DateTime @default(now())
-}
-
-// ==========================================
-// APPOINTMENT
-// ==========================================
-
-model Appointment {
-  id        Int               @id @default(autoincrement())
-  patientId Int
-  doctorId  Int
-
-  date      DateTime
-  time      String
-  reason    String
-  status    AppointmentStatus @default(PENDING)
-
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-
-  // Relationships
-  patient   Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor    Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-
-  @@unique([doctorId, date, time])
-}
-
-// ==========================================
-// DOCTOR REVIEW
-// ==========================================
-
-model DoctorReview {
-  id        Int      @id @default(autoincrement())
-
-  patientId Int
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-
-  doctorId  Int
-  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-
-  rating    Int
-  comment   String?
-
-  createdAt DateTime @default(now())
-
-  @@unique([patientId, doctorId])
-}
-
-// ==========================================
-// AI ASSISTANT
-// ==========================================
-
-model AiConversation {
-  id                  Int      @id @default(autoincrement())
-
-  patientId           Int
-  patient             Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-
-  recommendedDoctorId Int?
-  recommendedDoctor   Doctor?  @relation(fields: [recommendedDoctorId], references: [id])
-
-  userInput           String
-  aiResponse          String
-
-  createdAt           DateTime @default(now())
 }

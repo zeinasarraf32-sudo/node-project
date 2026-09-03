@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import StatCard from "@/components/admin/StatCard";
 import RecentAppointments from "@/components/admin/RecentAppointments";
 import SpecialtyDistribution from "@/components/admin/SpecialtyDistribution";
@@ -11,7 +12,9 @@ import AppointmentsTable from "@/components/admin/AppointmentsTable";
 import PatientsList from "@/components/admin/PatientsList"; 
 
 export default function AdminDashboardPage() {
-const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'appointments' | 'patients'>('overview');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'appointments' | 'patients'>('overview');
+
   return (
     <div className="min-h-screen bg-slate-50/50 p-8 space-y-6">
       
@@ -24,10 +27,13 @@ const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'appointment
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm">
+          <button className="px-4 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm cursor-pointer">
             Export
           </button>
-          <button className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-sm">
+          <button 
+            onClick={() => router.push('/admin/doctors/add')}
+            className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
             + Add Doctor
           </button>
         </div>
@@ -87,7 +93,7 @@ const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'appointment
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-1.5 rounded-lg capitalize transition-all ${
+            className={`px-4 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${
               activeTab === tab
                 ? 'bg-white font-semibold text-slate-800 shadow-sm'
                 : 'hover:text-slate-900'

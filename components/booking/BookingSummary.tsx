@@ -10,7 +10,6 @@ interface BookingSummaryProps {
   selectedDate: number | null;
   selectedTime: string | null;
   patientName: string;
-  insuranceDiscount: number;
   onConfirm: () => void;
 }
 
@@ -19,11 +18,12 @@ export default function BookingSummary({
   selectedDate,
   selectedTime,
   patientName,
-  insuranceDiscount,
   onConfirm,
 }: BookingSummaryProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const totalDue = doctor.fee - insuranceDiscount;
+  
+  // حساب المبلغ الإجمالي من سعر استشارة الطبيب فقط
+  const totalDue = Number(doctor?.fee) || 0;
   const isReadyToBook = selectedDate !== null && selectedTime !== null;
 
   const handleConfirmClick = () => {
@@ -32,7 +32,7 @@ export default function BookingSummary({
     // 1. تفعيل حالة التحميل
     setIsSubmitting(true);
 
-    // 2. الانتظار لمدة ثانية واحدة لمحاكاة معالجة البيانات ثم تنفيذ التوجيه
+    // 2. الانتظار لمدة ثانية واحدة لمحاكاة معالجة البيانات
     setTimeout(() => {
       onConfirm();
     }, 1000);
@@ -97,15 +97,11 @@ export default function BookingSummary({
         </div>
       </div>
 
-      {/* Price Calculation */}
+      {/* Price Calculation - بدون تأمين */}
       <div className="space-y-2 text-sm pt-1">
         <div className="flex items-center justify-between text-gray-600">
           <span>Consultation Fee</span>
           <span className="font-semibold text-gray-900">${doctor.fee}</span>
-        </div>
-        <div className="flex items-center justify-between text-emerald-600">
-          <span>Insurance Coverage</span>
-          <span className="font-semibold">-${insuranceDiscount}</span>
         </div>
         <div className="flex items-center justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-100">
           <span>Total Due</span>

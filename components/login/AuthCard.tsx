@@ -110,7 +110,7 @@
               />
             </div>
             <p className="text-xs text-gray-400 mt-1.5 font-medium">
-              Tip: use "admin@gmail.com" for Admin Dashboard
+              Tip: use {"\"admin@gmail.com\""} for Admin Dashboard
             </p>
           </div>
 

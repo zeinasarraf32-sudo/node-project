@@ -1,305 +1,137 @@
-
-datasource db {
-  provider = "postgresql" // Or "mysql" / "sqlite"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
 }
 
 // ==========================================
 // ENUMS
 // ==========================================
 
-enum Role {
-  PATIENT
-  DOCTOR
-  ADMIN
-}
-
 enum AppointmentStatus {
   PENDING
   CONFIRMED
   COMPLETED
   CANCELLED
-  RESCHEDULED
 }
 
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-}
-
-enum NotificationType {
-  APPOINTMENT_REMINDER
-  PRESCRIPTION_REFILL
-  LAB_RESULT
-  SYSTEM_PROMOTION
+enum DoctorStatus {
+  ACTIVE
+  ON_LEAVE
+  INACTIVE
 }
 
 // ==========================================
-// USER & ROLES
+// PATIENT
 // ==========================================
-
-model User {
-  id        String   @id @default(cuid())
-  fullName  String
-  email     String   @unique
-  phone     String?
-  password  String
-  role      Role     @default(PATIENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 1:1 Relations
-  patient Patient?
-  doctor  Doctor?
-  admin   Admin?
-
-  // Notifications
-  notifications Notification[]
-
-  @@map("users")
-}
 
 model Patient {
-  id        String    @id @default(cuid())
-  userId    String    @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  dob       DateTime?
-  gender    Gender?
-  bloodType String?
-  address   String?
+  id              Int          @id @default(autoincrement())
+  fullName        String
+  email           String       @unique
+  phone           String?
+  password        String
+  imageUrl        String?      
+  condition       String?      
 
-  // Insurance Details
-  insuranceProvider String?
-  insuranceMemberId String?
-  insuranceActive   Boolean @default(false)
-
-  // Settings
-  appointmentReminders Boolean @default(true)
-  prescriptionRefills  Boolean @default(true)
-  labResults           Boolean @default(false)
-  promotions           Boolean @default(false)
-
-  // Relationships
   appointments    Appointment[]
-  aiConversations AiConversation[]
-  conditions      MedicalCondition[]
-  medications     Medication[]
   reviews         DoctorReview[]
-  labResultsData  LabResult[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("patients")
-}
-
-model Doctor {
-  id            String    @id @default(cuid())
-  userId        String    @unique
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  specialtyId   String
-  specialty     Specialty @relation(fields: [specialtyId], references: [id])
-
-  clinicId      String
-  clinic        Clinic    @relation(fields: [clinicId], references: [id])
-
-  licenseNumber String   @unique
-  experienceYrs Int      @default(0)
-  consultationFee Decimal @db.Decimal(10, 2)
-  bio           String?
-
-  // Relationships
-  appointments     Appointment[]
-  schedules        DoctorSchedule[]
-  aiConversations  AiConversation[]
-  reviews          DoctorReview[]
-  labResults       LabResult[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("doctors")
-}
-
-model Admin {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department String?
-  permissions String[]
-
-  createdAt  DateTime @default(now())
-
-  @@map("admins")
-}
-
-model Clinic {
-  id          String   @id @default(cuid())
-  name        String
-  address     String
-  city        String
-  phone       String
-  location    String?
-  description String?
-
-  doctors      Doctor[]
-  appointments Appointment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("clinics")
-}
-
-model Specialty {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-
-  doctors         Doctor[]
-  appointments    Appointment[]
   aiConversations AiConversation[]
 
-  createdAt DateTime @default(now())
-
-  @@map("specialties")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 // ==========================================
-// SCHEDULING & APPOINTMENTS
+// DOCTOR
+// ==========================================
+
+model Doctor {
+  id              Int          @id @default(autoincrement())
+  fullName        String
+  email           String       @unique
+  phone           String?
+  password        String
+  specialty       String
+  experienceYrs   Int          @default(0)
+  consultationFee Float        @default(0.0)
+  location        String?
+  imageUrl        String      
+  status          DoctorStatus @default(ACTIVE)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relationships
+  appointments    Appointment[]
+  schedules       DoctorSchedule[]
+  reviews         DoctorReview[]
+  aiConversations AiConversation[]
+}
+
+// ==========================================
+// DOCTOR SCHEDULE
 // ==========================================
 
 model DoctorSchedule {
-  id        String   @id @default(cuid())
-  doctorId  String
-  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  id                  Int      @id @default(autoincrement())
+  doctorId            Int
 
-  dayOfWeek Int      // 0 = Sunday, 1 = Monday ... 6 = Saturday
-  startTime String   // e.g., "09:00"
-  endTime   String   // e.g., "17:00"
-  slotDurationMinutes Int @default(30) // Duration of individual slots
+  doctor              Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
+  dayOfWeek           Int
+  startTime           String
+  endTime             String
+  slotDurationMinutes Int      @default(30)
 
-  @@map("doctor_schedules")
-}
-
-model Appointment {
-  id          String            @id @default(cuid())
-  
-  patientId   String
-  patient     Patient           @relation(fields: [patientId], references: [id])
-
-  doctorId    String
-  doctor      Doctor            @relation(fields: [doctorId], references: [id])
-
-  clinicId    String
-  clinic      Clinic            @relation(fields: [clinicId], references: [id])
-
-  specialtyId String
-  specialty   Specialty         @relation(fields: [specialtyId], references: [id])
-
-  date        DateTime          
-  time        String            // e.g. "10:30 AM"
-  reason      String
-  notes       String?
-  status      AppointmentStatus @default(PENDING)
-
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  @@map("appointments")
+  createdAt           DateTime @default(now())
 }
 
 // ==========================================
-// REVIEWS & LABS
+// APPOINTMENT
+// ==========================================
+
+model Appointment {
+  id        Int               @id @default(autoincrement())
+  patientId Int
+  doctorId  Int
+
+  date      DateTime
+  time      String
+  reason    String
+  status    AppointmentStatus @default(PENDING)
+
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  // Relationships
+  patient   Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor    Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, date, time])
+}
+
+// ==========================================
+// DOCTOR REVIEW
 // ==========================================
 
 model DoctorReview {
-  id        String   @id @default(cuid())
-  patientId String
+  id        Int      @id @default(autoincrement())
+
+  patientId Int
   patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  doctorId  String
+  doctorId  Int
   doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
-  rating    Int      // 1 to 5 stars
+  rating    Int
   comment   String?
-  createdAt DateTime @default(now())
-
-  @@map("doctor_reviews")
-}
-
-model LabResult {
-  id          String   @id @default(cuid())
-  patientId   String
-  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-
-  doctorId    String?
-  doctor      Doctor?  @relation(fields: [doctorId], references: [id])
-
-  testName    String   // e.g. "Blood Sugar Test"
-  resultValue String   // e.g. "110 mg/dL"
-  fileUrl     String?  // PDF attachment URL
-  testDate    DateTime @default(now())
-
-  createdAt   DateTime @default(now())
-
-  @@map("lab_results")
-}
-
-// ==========================================
-// NOTIFICATIONS & MEDICAL HISTORY
-// ==========================================
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  title     String
-  message   String
-  type      NotificationType
-  isRead    Boolean          @default(false)
-
-  createdAt DateTime         @default(now())
-
-  @@map("notifications")
-}
-
-model MedicalCondition {
-  id        String   @id @default(cuid())
-  patientId String
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-
-  name      String
-  since     String
-  status    String   @default("Managed")
 
   createdAt DateTime @default(now())
 
-  @@map("medical_conditions")
-}
-
-model Medication {
-  id        String    @id @default(cuid())
-  patientId String
-  patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
-
-  name      String
-  dosage    String
-  refillDue DateTime?
-
-  createdAt DateTime  @default(now())
-
-  @@map("medications")
+  @@unique([patientId, doctorId])
 }
 
 // ==========================================
@@ -307,21 +139,16 @@ model Medication {
 // ==========================================
 
 model AiConversation {
-  id                   String     @id @default(cuid())
-  patientId            String
-  patient              Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id                  Int      @id @default(autoincrement())
 
-  recommendedSpecialtyId String?
-  recommendedSpecialty   Specialty? @relation(fields: [recommendedSpecialtyId], references: [id])
+  patientId           Int
+  patient             Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  recommendedDoctorId   String?
-  recommendedDoctor     Doctor?    @relation(fields: [recommendedDoctorId], references: [id])
+  recommendedDoctorId Int?
+  recommendedDoctor   Doctor?  @relation(fields: [recommendedDoctorId], references: [id])
 
-  userInput            String     @db.Text
-  aiResponse           String     @db.Text
-  urgencyGuidance      String?
+  userInput           String
+  aiResponse          String
 
-  createdAt            DateTime   @default(now())
-
-  @@map("ai_conversations")
+  createdAt           DateTime @default(now())
 }

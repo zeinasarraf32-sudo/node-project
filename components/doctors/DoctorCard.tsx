@@ -108,7 +108,6 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
           View Profile
         </button>
         
-        {/* زر الحجز التفاعلي بدعم حالات Loading و Success */}
         <button
           onClick={handleBooking}
           disabled={bookingStatus !== 'idle'}

@@ -1,7 +1,10 @@
 'use client';
 
-import { CheckCircle2, Star } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { CheckCircle2, Star, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { axiosGet } from '@/lib/axios';
 
 export interface Doctor {
   id: string;
@@ -14,13 +17,65 @@ export interface Doctor {
   location: string;
 }
 
+interface BackendDoctor {
+  id: string | number;
+  fullName?: string;
+  name?: string;
+  specialty: string;
+  consultationFee?: number;
+  location?: string;
+  imageUrl?: string;
+}
+
 interface DoctorSelectorProps {
-  doctors: Doctor[];
-  selectedDoctorId: string;
+  selectedDoctorId?: string;
+  autoSelectId?: string; // 👈 تم إضافة الخاصية للاستقبال من الرابط
   onSelect: (doctor: Doctor) => void;
 }
 
-export default function DoctorSelector({ doctors, selectedDoctorId, onSelect }: DoctorSelectorProps) {
+export default function DoctorSelector({ 
+  selectedDoctorId, 
+  autoSelectId, 
+  onSelect 
+}: DoctorSelectorProps) {
+  // جلب الأطباء من الباك إند
+  const { data: responseData, isLoading, isError } = useQuery({
+    queryKey: ['doctors'],
+    queryFn: () => axiosGet<BackendDoctor[]>('doctors'),
+  });
+
+  const doctorsList = responseData?.data || [];
+
+  // تحويل البيانات القادمة من الباك إند لشكل Doctor المتوافق
+  const doctors: Doctor[] = doctorsList.map((doc) => ({
+    id: String(doc.id),
+    name: doc.fullName || doc.name || 'Dr. Unknown',
+    specialty: doc.specialty || 'General',
+    rating: 4.9,
+    reviewsCount: 312,
+    avatar: doc.imageUrl || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150',
+    fee: Number(doc.consultationFee) || 35,
+    location: doc.location || 'Clinic Location',
+  }));
+
+  // 👈 التأثير التلقائي: يتم تشغيله فور وصول بيانات الأطباء من الـ API
+  useEffect(() => {
+    if (doctors.length > 0) {
+      const targetId = autoSelectId || selectedDoctorId;
+      if (targetId) {
+        const found = doctors.find((d) => d.id === targetId);
+        if (found) {
+          onSelect(found);
+          return;
+        }
+      }
+      // اختيار أول طبيب تلقائياً إذا لم يتوفر ID أو لم يُعثر عليه
+      if (!selectedDoctorId) {
+        onSelect(doctors[0]);
+      }
+    }
+  }, [responseData, autoSelectId]);
+
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
       <div className="flex items-center gap-3 mb-2">
@@ -31,8 +86,27 @@ export default function DoctorSelector({ doctors, selectedDoctorId, onSelect }: 
       </div>
 
       <div className="space-y-3">
+        {isLoading && (
+          <div className="py-8 text-center text-slate-400">
+            <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
+            <p className="text-xs">Loading doctors...</p>
+          </div>
+        )}
+
+        {isError && (
+          <div className="py-6 text-center text-rose-500 text-xs">
+            Failed to load doctors list.
+          </div>
+        )}
+
+        {!isLoading && doctors.length === 0 && (
+          <div className="py-6 text-center text-slate-400 text-xs">
+            No doctors available right now.
+          </div>
+        )}
+
         {doctors.map((doc) => {
-          const isSelected = doc.id === selectedDoctorId;
+          const isSelected = doc.id === (autoSelectId || selectedDoctorId);
           return (
             <div
               key={doc.id}

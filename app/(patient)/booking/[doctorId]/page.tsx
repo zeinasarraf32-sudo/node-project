@@ -1,63 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import DoctorSelector, { Doctor } from '@/components/booking/DoctorSelector';
 import DatePicker from '@/components/booking/DatePicker';
 import TimeSlotSelector from '@/components/booking/TimeSlotSelector';
 import BookingSummary from '@/components/booking/BookingSummary';
 
-const MOCK_DOCTORS: Doctor[] = [
-  {
-    id: '1',
-    name: 'Dr. Sara Al-Halabi',
-    specialty: 'Cardiologist',
-    rating: 4.9,
-    reviewsCount: 312,
-    avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
-    fee: 35,
-    location: 'مستشفى الرمل، طرابلس',
-  },
-  {
-    id: '2',
-    name: 'Dr. Jamal Issa',
-    specialty: 'Neurologist',
-    rating: 4.8,
-    reviewsCount: 278,
-    avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
-    fee: 40,
-    location: 'مستشفى الرمل، طرابلس',
-  },
-  {
-    id: '3',
-    name: "Dr. Layla Al-Rafi'i",
-    specialty: 'Pediatrician',
-    rating: 4.9,
-    reviewsCount: 445,
-    avatar: 'https://images.unsplash.com/photo-1594824813566-78a9c2018243?w=150&auto=format&fit=crop&q=80',
-    fee: 30,
-    location: 'مستشفى الرمل، طرابلس',
-  },
-];
-
-export default function BookingPage() {
+export default function BookingPage({ params }: { params: Promise<{ doctorId: string }> }) {
   const router = useRouter();
   
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor>(MOCK_DOCTORS[0]);
+  const resolvedParams = use(params);
+  const routeDoctorId = resolvedParams.doctorId;
+
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [symptomsReason, setSymptomsReason] = useState<string>('');
 
   const handleConfirm = () => {
-    if (!selectedDate || !selectedTime) return;
-    
+    if (!selectedDate || !selectedTime || !selectedDoctor) return;
     router.push('/appointment-success');
   };
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Page Header */}
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             Book an Appointment
@@ -67,30 +35,25 @@ export default function BookingPage() {
           </p>
         </div>
 
-        {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Left Flow Steps */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Step 1: Doctor Selector */}
+            {/* 👈 تمرير selectedDoctorId و autoSelectId إلى DoctorSelector */}
             <DoctorSelector
-              doctors={MOCK_DOCTORS}  
-              selectedDoctorId={selectedDoctor.id}
+              selectedDoctorId={selectedDoctor?.id || routeDoctorId}
+              autoSelectId={routeDoctorId}
               onSelect={setSelectedDoctor}
             />
 
-            {/* Step 2: Date Picker */}
             <DatePicker
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
             />
 
-            {/* Step 3: Time Slot Selector */}
             <TimeSlotSelector
               selectedTime={selectedTime}
               onSelectTime={setSelectedTime}
             />
 
-            {/* Step 4: Reason for Visit */}
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
@@ -108,16 +71,20 @@ export default function BookingPage() {
             </div>
           </div>
 
-          {/* Right Floating Sidebar Summary */}
           <div className="lg:col-span-1">
-            <BookingSummary
-              doctor={selectedDoctor}
-              selectedDate={selectedDate}
-              selectedTime={selectedTime}
-              patientName="Ali Hassan"
-              insuranceDiscount={15}
-              onConfirm={handleConfirm}
-            />
+            {selectedDoctor ? (
+              <BookingSummary
+                doctor={selectedDoctor}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                patientName="Ali Hassan"
+                onConfirm={handleConfirm}
+              />
+            ) : (
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center text-gray-400 text-sm shadow-sm">
+                Please select a doctor to view summary.
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { Brain, Calendar, FileText, Pill } from 'lucide-react';
 
 const ACTIONS = [
-  { label: 'AI Assistant', icon: Brain, bg: 'bg-blue-50', text: 'text-blue-600', href: '/AIassistant' },
-  { label: 'Book Appointment', icon: Calendar, bg: 'bg-emerald-50', text: 'text-emerald-600', href: '/booking/1' },
+  { label: 'AI Assistant', icon: Brain, bg: 'bg-blue-50', text: 'text-blue-600', href: '/ai-assistant' },
+  { label: 'Book Appointment', icon: Calendar, bg: 'bg-emerald-50', text: 'text-emerald-600', href: '/doctors' },
   { label: 'My Appointments', icon: FileText, bg: 'bg-purple-50', text: 'text-purple-600', href: '/appointment-confirmed' },
   { label: 'Prescriptions', icon: Pill, bg: 'bg-amber-50', text: 'text-amber-600', href: '/profile' },
 ];

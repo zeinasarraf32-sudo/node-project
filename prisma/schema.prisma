@@ -1,10 +1,39 @@
-generator client {
-  provider = "prisma-client-js"
-}
+// prisma/schema.prisma
+
+// prisma/schema.prisma
+
+// prisma/schema.prisma
+
+// prisma/schema.prisma
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+generator client {
+  provider = "prisma-client-js"
+}
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum DoctorStatus {
+  ACTIVE
+  ON_LEAVE
+  INACTIVE
+}
+
+// ==========================================
+// PATIENT
+// ==========================================
 
 model Patient {
   id              Int              @id @default(autoincrement())

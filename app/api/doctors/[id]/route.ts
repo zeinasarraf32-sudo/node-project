@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
 import { IDoctor } from '@/interfaces/interfaces';
 import {CreateDoctorBody} from '@/interfaces/interfaces';
 
-export async function PUT(
+export async funhttps://github.com/zeinasarraf32-sudo/node-project/pull/5ction PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {

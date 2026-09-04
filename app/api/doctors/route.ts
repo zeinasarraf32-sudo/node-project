@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DoctorStatus } from '@prisma/client';
+import { CreateDoctorBody } from '@/interfaces/interfaces';
 
 export async function GET() {
   try {
@@ -10,20 +11,19 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({
-      status: 200,
-      data: doctors,
-    });
+    return NextResponse.json(
+      {
+        status: 200,
+        data: doctors,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Prisma Get Doctors Error:', error);
 
     return NextResponse.json(
-      {
-        message: 'Failed to fetch doctors',
-      },
-      {
-        status: 500,
-      }
+      { message: 'Failed to fetch doctors' },
+      { status: 500 }
     );
   }
 }
@@ -43,28 +43,19 @@ export async function POST(request: NextRequest) {
       location = null,
       imageUrl = '',
       status = DoctorStatus.ACTIVE,
-    } = body;
+    } = body as CreateDoctorBody;
 
     if (!fullName || !email || !password || !specialty) {
       return NextResponse.json(
-        {
-          message:
-            'Full Name, email, password, and specialty are required',
-        },
-        {
-          status: 400,
-        }
+        { message: 'Full Name, email, password, and specialty are required' },
+        { status: 400 }
       );
     }
 
     if (!Object.values(DoctorStatus).includes(status)) {
       return NextResponse.json(
-        {
-          message: 'Invalid doctor status',
-        },
-        {
-          status: 400,
-        }
+        { message: 'Invalid doctor status' },
+        { status: 400 }
       );
     }
 
@@ -86,25 +77,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      {
-        status: 201,
-        data: doctor,
-      },
-      {
-        status: 201,
-      }
-    );
+    return NextResponse.json(doctor, { status: 201 });
   } catch (error) {
     console.error('Prisma Create Doctor Error:', error);
 
     return NextResponse.json(
-      {
-        message: 'Failed to create doctor',
-      },
-      {
-        status: 500,
-      }
+      { message: 'Failed to create doctor' },
+      { status: 500 }
     );
   }
 }

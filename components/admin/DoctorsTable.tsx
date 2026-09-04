@@ -69,7 +69,6 @@ export default function DoctorsTable() {
 
   const doctorsList = responseData?.data ?? [];
 
-
   const deleteMutation = useMutation({
     mutationFn: (id: number) =>
       axiosDelete(`doctors/${id}`),
@@ -81,16 +80,15 @@ export default function DoctorsTable() {
     },
   });
 
-
   const updateMutation = useMutation({
     mutationFn: ({
       id,
       data,
     }: {
       id: number;
-      data: IDoctor;
+      data: Partial<IDoctor>;
     }) =>
-      axiosPut<IDoctor, IDoctor>(
+      axiosPut<Partial<IDoctor>, IDoctor>(
         `doctors/${id}`,
         data
       ),

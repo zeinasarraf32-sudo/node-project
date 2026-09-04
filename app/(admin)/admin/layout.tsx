@@ -15,11 +15,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }));
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div>
-        <AdminNavbar />
-        {children}
-      </div>
-    </QueryClientProvider>
+    <html lang="en">
+      <body className="min-h-screen bg-slate-50 antialiased overflow-x-hidden">
+        <QueryClientProvider client={queryClient}>
+          <div>
+            <AdminNavbar />
+            {children}
+          </div>
+        </QueryClientProvider>
+      </body>
+    </html>
   );
 }

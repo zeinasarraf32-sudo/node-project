@@ -2,14 +2,16 @@
 
 import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
 import DoctorSelector, { Doctor } from '@/components/booking/DoctorSelector';
 import DatePicker from '@/components/booking/DatePicker';
 import TimeSlotSelector from '@/components/booking/TimeSlotSelector';
 import BookingSummary from '@/components/booking/BookingSummary';
+import { axiosPost } from '@/lib/axios';
 
 export default function BookingPage({ params }: { params: Promise<{ doctorId: string }> }) {
   const router = useRouter();
-  
+
   const resolvedParams = use(params);
   const routeDoctorId = resolvedParams.doctorId;
 
@@ -18,9 +20,48 @@ export default function BookingPage({ params }: { params: Promise<{ doctorId: st
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [symptomsReason, setSymptomsReason] = useState<string>('');
 
+  // تهيئة بيانات المريض مباشرة من localStorage دون الحاجة لـ useEffect
+  const [patientData] = useState<{ id: string; name: string }>(() => {
+    if (typeof window !== 'undefined') {
+      const storedName = localStorage.getItem('userName');
+      const storedId = localStorage.getItem('patientId');
+      return {
+        id: storedId || '',
+        name: storedName || 'Patient',
+      };
+    }
+    return { id: '', name: 'Guest Patient' };
+  });
+
+  const bookingMutation = useMutation({
+    mutationFn: (newBooking: {
+      doctorId: string;
+      patientId: string;
+      date: string;
+      time: string;
+      reason: string;
+    }) => axiosPost('appointments', newBooking),
+    onSuccess: () => {
+      router.push('/appointment-confirmed');
+    },
+    onError: (error) => {
+      console.error('Failed to book appointment:', error);
+      alert('Failed to confirm booking. Please try again.');
+    },
+  });
+
   const handleConfirm = () => {
     if (!selectedDate || !selectedTime || !selectedDoctor) return;
-    router.push('/appointment-success');
+
+    const formattedDate = `Aug ${selectedDate}, 2026`;
+
+    bookingMutation.mutate({
+      doctorId: selectedDoctor.id,
+      patientId: patientData.id,
+      date: formattedDate,
+      time: selectedTime,
+      reason: symptomsReason,
+    });
   };
 
   return (
@@ -37,7 +78,6 @@ export default function BookingPage({ params }: { params: Promise<{ doctorId: st
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <div className="lg:col-span-2 space-y-6">
-            {/* 👈 تمرير selectedDoctorId و autoSelectId إلى DoctorSelector */}
             <DoctorSelector
               selectedDoctorId={selectedDoctor?.id || routeDoctorId}
               autoSelectId={routeDoctorId}
@@ -77,8 +117,9 @@ export default function BookingPage({ params }: { params: Promise<{ doctorId: st
                 doctor={selectedDoctor}
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
-                patientName="Ali Hassan"
+                patientName={patientData.name}
                 onConfirm={handleConfirm}
+                isSubmitting={bookingMutation.isPending}
               />
             ) : (
               <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center text-gray-400 text-sm shadow-sm">

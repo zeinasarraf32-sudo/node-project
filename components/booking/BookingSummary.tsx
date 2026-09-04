@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Calendar, Clock, MapPin, User, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { Doctor } from './DoctorSelector';
@@ -11,6 +10,7 @@ interface BookingSummaryProps {
   selectedTime: string | null;
   patientName: string;
   onConfirm: () => void;
+  isSubmitting?: boolean;
 }
 
 export default function BookingSummary({
@@ -19,24 +19,11 @@ export default function BookingSummary({
   selectedTime,
   patientName,
   onConfirm,
+  isSubmitting = false,
 }: BookingSummaryProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   // حساب المبلغ الإجمالي من سعر استشارة الطبيب فقط
   const totalDue = Number(doctor?.fee) || 0;
   const isReadyToBook = selectedDate !== null && selectedTime !== null;
-
-  const handleConfirmClick = () => {
-    if (!isReadyToBook) return;
-
-    // 1. تفعيل حالة التحميل
-    setIsSubmitting(true);
-
-    // 2. الانتظار لمدة ثانية واحدة لمحاكاة معالجة البيانات
-    setTimeout(() => {
-      onConfirm();
-    }, 1000);
-  };
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-6 sticky top-24">
@@ -97,7 +84,7 @@ export default function BookingSummary({
         </div>
       </div>
 
-      {/* Price Calculation - بدون تأمين */}
+      {/* Price Calculation */}
       <div className="space-y-2 text-sm pt-1">
         <div className="flex items-center justify-between text-gray-600">
           <span>Consultation Fee</span>
@@ -114,7 +101,7 @@ export default function BookingSummary({
         <button
           type="button"
           disabled={!isReadyToBook || isSubmitting}
-          onClick={handleConfirmClick}
+          onClick={onConfirm}
           className={`w-full py-3.5 px-4 rounded-xl font-bold transition text-sm flex items-center justify-center gap-2 ${
             isReadyToBook && !isSubmitting
               ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'

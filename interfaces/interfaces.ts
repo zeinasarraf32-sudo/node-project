@@ -1,5 +1,22 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { AppointmentStatus } from '@prisma/client';
+
+export interface CreateAppointmentBody {
+  doctorId: number;
+  patientId: number;
+  date: string;
+  time: string;
+  reason?: string;
+  status?: AppointmentStatus;
+}
+
+export interface UpdateAppointmentBody {
+  date?: string;
+  time?: string;
+  reason?: string;
+  status?: AppointmentStatus;
+}
 
 export interface IResponse<T = undefined> {
   data?: T;
@@ -43,4 +60,35 @@ export interface CreateDoctorBody {
   location?: string | null;
   imageUrl?: string;
   status?: "ACTIVE" | "ON_LEAVE" | "INACTIVE";
+}
+
+export interface CreateAppointmentBody {
+  doctorId: number;
+  patientId: number;
+  date: string;
+  time: string;
+  reason?: string;
+  status?: AppointmentStatus;
+}
+
+export interface UpdateAppointmentBody {
+  date?: string;
+  time?: string;
+  reason?: string;
+  status?: AppointmentStatus;
+}
+
+export interface Appointment {
+  id: number;
+  date: string;
+  time: string;
+  reason?: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  doctor: {
+    id: number;
+    fullName: string;
+    specialty: string;
+    imageUrl: string | null;
+    location: string | null;
+  };
 }

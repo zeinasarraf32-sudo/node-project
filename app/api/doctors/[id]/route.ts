@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { IDoctor } from '@/interfaces/interfaces';
 import {CreateDoctorBody} from '@/interfaces/interfaces';
 
-export async funhttps://github.com/zeinasarraf32-sudo/node-project/pull/5ction PUT(
-  request: Request,
+export async function PUT (
+  request: Request, 
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -44,7 +44,7 @@ export async funhttps://github.com/zeinasarraf32-sudo/node-project/pull/5ction P
       },
       data: {
         fullName: fullName.trim(),
-        email: email.trim(),
+        email: email?.trim(),
         phone: phone?.trim() || null,
         specialty: specialty.trim(),
         experienceYrs: Number(experienceYrs) || 0,

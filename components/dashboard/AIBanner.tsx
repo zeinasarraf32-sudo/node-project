@@ -1,3 +1,6 @@
+'use client';
+
+import Link from 'next/link';
 import { Brain } from 'lucide-react';
 
 export default function AIBanner() {
@@ -14,9 +17,12 @@ export default function AIBanner() {
           </p>
         </div>
       </div>
-      <button className="bg-white hover:bg-emerald-50 text-emerald-700 font-bold px-6 py-2.5 rounded-xl text-sm shrink-0 transition">
+      <Link
+        href="/ai-assistant"
+        className="bg-white hover:bg-emerald-50 text-emerald-700 font-bold px-6 py-2.5 rounded-xl text-sm shrink-0 transition"
+      >
         Ask AI
-      </button>
+      </Link>
     </div>
   );
 }

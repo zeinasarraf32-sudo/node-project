@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { AppointmentStatus } from '@prisma/client';
 
 export interface IResponse<T = undefined> {
@@ -10,7 +7,7 @@ export interface IResponse<T = undefined> {
 }
 
 /*
- * Doctor data used by Admin / API
+ * Doctor data used by Admin / API.
  */
 export interface IDoctor {
   id?: number;
@@ -21,48 +18,37 @@ export interface IDoctor {
   specialty: string;
   experienceYrs?: number | string;
   consultationFee?: number | string;
-  location?: string;
-  imageUrl?: string;
+  location?: string | null;
+  imageUrl?: string | null;
   status?: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE';
 }
 
 /*
  * Doctor data returned from API.
  *
- * Some fields are optional because different UI pages
- * only need part of the Doctor object.
+ * Some fields remain optional because different
+ * pages use different parts of the Doctor object.
  */
 export interface IBackendDoctor {
   id: string | number;
-
   fullName?: string | null;
   name?: string | null;
-
   email?: string | null;
   phone?: string | null;
-
   specialty?: string | null;
-
   experienceYrs?: number | string | null;
-
   consultationFee?: number | string | null;
-
   location?: string | null;
-
   imageUrl?: string | null;
-
   status?: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE';
 
   /*
-   * These fields are kept because some existing UI
-   * mappings already support them.
+   * Temporary aliases supported by older UI mappings.
+   * They do not contain fake fallback values.
    */
   price?: number | null;
   fee?: number | null;
   image?: string | null;
-
-  rating?: number | null;
-  reviewsCount?: number | null;
 }
 
 /*
@@ -72,8 +58,6 @@ export interface IBookingDoctor {
   id: string;
   name: string;
   specialty: string;
-  rating: number;
-  reviewsCount: number;
   avatar: string;
   fee: number;
   location: string;

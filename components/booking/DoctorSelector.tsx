@@ -4,25 +4,16 @@ import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   CheckCircle2,
-  Star,
   Loader2,
   User,
 } from 'lucide-react';
 
 import { axiosGet } from '@/lib/axios';
-
 import {
   IBackendDoctor,
   IBookingDoctor,
 } from '@/interfaces/interfaces';
 
-/*
- * Keep this alias temporarily so old imports such as:
- *
- * import { Doctor } from './DoctorSelector'
- *
- * continue working.
- */
 export type Doctor = IBookingDoctor;
 
 interface DoctorSelectorProps {
@@ -38,25 +29,15 @@ export default function DoctorSelector({
   onSelect,
   onSelectDoctor,
 }: DoctorSelectorProps) {
-  const handleSelect =
-    onSelectDoctor ||
-    onSelect ||
-    (() => {});
-
-  /*
-   * Keep the current callback inside a ref
-   * to prevent unnecessary effect loops.
-   */
   const handleSelectRef =
-    useRef(handleSelect);
+    useRef<(doctor: IBookingDoctor) => void>(() => {});
+
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     handleSelectRef.current =
-      handleSelect;
-  }, [handleSelect]);
-
-  const initializedRef =
-    useRef(false);
+      onSelectDoctor ?? onSelect ?? (() => {});
+  }, [onSelectDoctor, onSelect]);
 
   const {
     data: responseData,
@@ -64,58 +45,45 @@ export default function DoctorSelector({
     isError,
   } = useQuery({
     queryKey: ['doctors'],
-
     queryFn: () =>
-      axiosGet<IBackendDoctor[]>(
-        'doctors'
-      ),
+      axiosGet<IBackendDoctor[]>('doctors'),
   });
 
-  const doctorsList =
-    responseData?.data || [];
+  const doctorsList = responseData?.data ?? [];
 
-  const doctors: IBookingDoctor[] =
-    doctorsList.map((doc) => ({
-      id: String(doc.id),
+  /*
+   * Only ACTIVE doctors can be booked.
+   * All displayed data comes from the API.
+   */
+  const doctors: IBookingDoctor[] = doctorsList
+    .filter((doctor) => doctor.status === 'ACTIVE')
+    .map((doctor) => ({
+      id: String(doctor.id),
 
       name:
-        doc.fullName ||
-        doc.name ||
-        'Dr. Unknown',
+        doctor.fullName ||
+        doctor.name ||
+        'Doctor',
 
       specialty:
-        doc.specialty ||
-        'General',
+        doctor.specialty ||
+        'Not specified',
 
-      rating: Number(
-        doc.rating ?? 4.9
-      ),
-
-      reviewsCount: Number(
-        doc.reviewsCount ?? 312
-      ),
-
-      /*
-       * If doctor does not have image,
-       * we keep empty string.
-       *
-       * UI below shows User icon instead.
-       */
       avatar:
-        doc.imageUrl ||
-        doc.image ||
+        doctor.imageUrl ||
+        doctor.image ||
         '',
 
-      fee:
-        Number(
-          doc.consultationFee ??
-            doc.fee ??
-            doc.price
-        ) || 35,
+      fee: Number(
+        doctor.consultationFee ??
+        doctor.fee ??
+        doctor.price ??
+        0
+      ),
 
       location:
-        doc.location ||
-        'Clinic Location',
+        doctor.location ||
+        'Not provided',
     }));
 
   useEffect(() => {
@@ -129,29 +97,21 @@ export default function DoctorSelector({
     initializedRef.current = true;
 
     const targetId =
-      autoSelectId ||
-      selectedDoctorId;
+      autoSelectId || selectedDoctorId;
 
     if (targetId) {
-      const foundDoctor =
-        doctors.find(
-          (doctor) =>
-            doctor.id ===
-            String(targetId)
-        );
+      const foundDoctor = doctors.find(
+        (doctor) =>
+          doctor.id === String(targetId)
+      );
 
       if (foundDoctor) {
-        handleSelectRef.current(
-          foundDoctor
-        );
-
+        handleSelectRef.current(foundDoctor);
         return;
       }
     }
 
-    handleSelectRef.current(
-      doctors[0]
-    );
+    handleSelectRef.current(doctors[0]);
   }, [
     doctors,
     autoSelectId,
@@ -161,7 +121,7 @@ export default function DoctorSelector({
   const handleDoctorClick = (
     doctor: IBookingDoctor
   ) => {
-    handleSelect(doctor);
+    handleSelectRef.current(doctor);
   };
 
   return (
@@ -206,20 +166,16 @@ export default function DoctorSelector({
           )}
 
         {/* Doctors */}
-        {doctors.map((doc) => {
+        {doctors.map((doctor) => {
           const isSelected =
-            doc.id ===
-            String(
-              selectedDoctorId
-            );
+            doctor.id === String(selectedDoctorId);
 
           return (
-            <div
-              key={doc.id}
-              onClick={() =>
-                handleDoctorClick(doc)
-              }
-              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition border ${
+            <button
+              key={doctor.id}
+              type="button"
+              onClick={() => handleDoctorClick(doctor)}
+              className={`w-full flex items-center justify-between p-4 rounded-xl transition border text-left ${
                 isSelected
                   ? 'border-blue-500 bg-blue-50/30 ring-1 ring-blue-500'
                   : 'border-gray-200 hover:border-blue-300 bg-white'
@@ -227,13 +183,11 @@ export default function DoctorSelector({
             >
               <div className="flex items-center gap-4">
                 {/* Doctor Avatar */}
-                <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
-                  {doc.avatar ? (
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                  {doctor.avatar ? (
                     <img
-                      src={
-                        doc.avatar
-                      }
-                      alt={doc.name}
+                      src={doctor.avatar}
+                      alt={doctor.name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -244,28 +198,22 @@ export default function DoctorSelector({
                 {/* Doctor Info */}
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">
-                    {doc.name}
+                    {doctor.name}
                   </h3>
 
                   <p className="text-xs text-blue-600 font-medium">
-                    {
-                      doc.specialty
-                    }
+                    {doctor.specialty}
                   </p>
 
-                  <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-
-                    <span className="font-bold text-gray-800">
-                      {doc.rating}
+                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                    <span>
+                      ${doctor.fee}
                     </span>
 
+                    <span>•</span>
+
                     <span>
-                      (
-                      {
-                        doc.reviewsCount
-                      }
-                      )
+                      {doctor.location}
                     </span>
                   </div>
                 </div>
@@ -274,7 +222,7 @@ export default function DoctorSelector({
               {isSelected && (
                 <CheckCircle2 className="w-5 h-5 text-blue-600 fill-blue-600/10" />
               )}
-            </div>
+            </button>
           );
         })}
       </div>

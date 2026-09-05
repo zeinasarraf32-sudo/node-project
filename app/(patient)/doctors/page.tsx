@@ -1,13 +1,7 @@
 'use client';
 
-import {
-  useState,
-} from 'react';
-
-import {
-  useQuery,
-} from '@tanstack/react-query';
-
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Search,
   Stethoscope,
@@ -16,7 +10,6 @@ import {
 import { axiosGet } from '@/lib/axios';
 
 import DoctorList from '@/components/doctors/DoctorList';
-
 import {
   Doctor,
 } from '@/components/doctors/DoctorCard';
@@ -25,11 +18,27 @@ import {
   IBackendDoctor,
 } from '@/interfaces/interfaces';
 
+function parseOptionalNumber(
+  value: number | string | null | undefined
+): number | null {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+
+  return Number.isFinite(parsedValue)
+    ? parsedValue
+    : null;
+}
+
 export default function FindDoctorsPage() {
-  const [
-    searchTerm,
-    setSearchTerm,
-  ] = useState('');
+  const [searchTerm, setSearchTerm] =
+    useState('');
 
   const [
     selectedSpecialty,
@@ -43,112 +52,104 @@ export default function FindDoctorsPage() {
     refetch,
   } = useQuery({
     queryKey: ['doctors'],
-
     queryFn: () =>
-      axiosGet<
-        IBackendDoctor[]
-      >('doctors'),
+      axiosGet<IBackendDoctor[]>('doctors'),
   });
 
   const doctorsList =
-    responseData?.data || [];
+    responseData?.data ?? [];
 
-  const mappedDoctors:
-    Doctor[] =
-    doctorsList.map(
-      (doc) => ({
-        id: String(doc.id),
+  /*
+   * Map only real API / Database fields.
+   * No rating, fake times, fake image,
+   * or fake "Available Today" value.
+   */
+  const mappedDoctors: Doctor[] =
+    doctorsList.map((doctor) => ({
+      id: String(doctor.id),
 
-        name:
-          doc.fullName ||
-          doc.name ||
-          'Dr. Unknown',
+      name:
+        doctor.fullName ||
+        doctor.name ||
+        'Doctor',
 
-        specialty:
-          doc.specialty ||
-          'General',
+      specialty:
+        doctor.specialty ||
+        'Not specified',
 
-        experienceYears:
-          Number(
-            doc.experienceYrs
-          ) || 0,
+      experienceYears:
+        parseOptionalNumber(
+          doctor.experienceYrs
+        ),
 
-        rating:
-          Number(
-            doc.rating
-          ) || 4.9,
+      location:
+        doctor.location || null,
 
-        location:
-          doc.location ||
-          'Location unavailable',
+      price:
+        parseOptionalNumber(
+          doctor.consultationFee ??
+          doctor.fee ??
+          doctor.price
+        ),
 
-        price:
-          Number(
-            doc.consultationFee
-          ) || 0,
+      status:
+        doctor.status === 'ACTIVE'
+          ? 'ACTIVE'
+          : doctor.status === 'ON_LEAVE'
+            ? 'ON_LEAVE'
+            : 'INACTIVE',
 
-        availabilityStatus:
-          doc.status ===
-          'ACTIVE'
-            ? 'Available Today'
-            : 'Unavailable',
+      image:
+        doctor.imageUrl ||
+        doctor.image ||
+        null,
+    }));
 
-        availableTimes: [
-          '09:00 AM',
-          '01:00 PM',
-          '04:00 PM',
-        ],
-
-        image:
-          doc.imageUrl ||
-          'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=500',
-      })
-    );
+  /*
+   * Search + Specialty Filter
+   */
+  const normalizedSearch =
+    searchTerm.trim().toLowerCase();
 
   const filteredDoctors =
-    mappedDoctors.filter(
-      (doc) => {
-        const matchesSearch =
-          doc.specialty
-            .toLowerCase()
-            .includes(
-              searchTerm.toLowerCase()
-            ) ||
-          doc.location
-            .toLowerCase()
-            .includes(
-              searchTerm.toLowerCase()
-            ) ||
-          doc.name
-            .toLowerCase()
-            .includes(
-              searchTerm.toLowerCase()
-            );
+    mappedDoctors.filter((doctor) => {
+      const matchesSearch =
+        doctor.name
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        doctor.specialty
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        (doctor.location || '')
+          .toLowerCase()
+          .includes(normalizedSearch);
 
-        const matchesSpecialty =
-          selectedSpecialty
-            ? doc.specialty.toLowerCase() ===
-              selectedSpecialty.toLowerCase()
-            : true;
+      const matchesSpecialty =
+        selectedSpecialty
+          ? doctor.specialty.toLowerCase() ===
+            selectedSpecialty.toLowerCase()
+          : true;
 
-        return (
-          matchesSearch &&
-          matchesSpecialty
-        );
-      }
-    );
+      return (
+        matchesSearch &&
+        matchesSpecialty
+      );
+    });
 
-  const specialties =
-    Array.from(
-      new Set(
-        mappedDoctors
-          .map(
-            (doctor) =>
-              doctor.specialty
-          )
-          .filter(Boolean)
-      )
-    );
+  /*
+   * Specialties are generated
+   * from real Doctor data.
+   */
+  const specialties = Array.from(
+    new Set(
+      mappedDoctors
+        .map((doctor) => doctor.specialty)
+        .filter(
+          (specialty) =>
+            specialty !== 'Not specified'
+        )
+    )
+  ).sort();
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-10 px-4 sm:px-6 lg:px-8">
@@ -160,30 +161,23 @@ export default function FindDoctorsPage() {
           </h1>
 
           <p className="text-xs text-slate-500">
-            Book appointments
-            with top verified
-            medical specialists.
+            Find medical specialists and book your
+            appointment easily.
           </p>
         </div>
 
-        {/* Search */}
+        {/* Search + Filter */}
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search */}
           <div className="relative md:col-span-2">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
 
             <input
               type="text"
               placeholder="Search doctor by name, specialty, or clinic location..."
-              value={
-                searchTerm
-              }
-              onChange={(
-                event
-              ) =>
-                setSearchTerm(
-                  event.target
-                    .value
-                )
+              value={searchTerm}
+              onChange={(event) =>
+                setSearchTerm(event.target.value)
               }
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
             />
@@ -194,15 +188,10 @@ export default function FindDoctorsPage() {
             <Stethoscope className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 z-10" />
 
             <select
-              value={
-                selectedSpecialty
-              }
-              onChange={(
-                event
-              ) =>
+              value={selectedSpecialty}
+              onChange={(event) =>
                 setSelectedSpecialty(
-                  event.target
-                    .value
+                  event.target.value
                 )
               }
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 transition-all appearance-none cursor-pointer"
@@ -211,39 +200,26 @@ export default function FindDoctorsPage() {
                 All Specialties
               </option>
 
-              {specialties.map(
-                (specialty) => (
-                  <option
-                    key={
-                      specialty
-                    }
-                    value={
-                      specialty
-                    }
-                  >
-                    {
-                      specialty
-                    }
-                  </option>
-                )
-              )}
+              {specialties.map((specialty) => (
+                <option
+                  key={specialty}
+                  value={specialty}
+                >
+                  {specialty}
+                </option>
+              ))}
             </select>
           </div>
         </div>
 
+        {/* Doctors */}
         <DoctorList
-          doctors={
-            filteredDoctors
-          }
-          isLoading={
-            isLoading
-          }
-          isError={
-            isError
-          }
-          onRetry={
-            refetch
-          }
+          doctors={filteredDoctors}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={() => {
+            void refetch();
+          }}
         />
       </div>
     </div>

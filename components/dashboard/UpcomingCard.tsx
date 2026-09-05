@@ -1,7 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, Clock, Loader2, User } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  Loader2,
+  User,
+} from 'lucide-react';
+
 import { Appointment } from '@/interfaces/interfaces';
 
 interface UpcomingCardProps {
@@ -38,17 +44,17 @@ export default function UpcomingCard({
     );
   }
 
-  const formattedDate = new Date(appointment.date).toLocaleDateString(
-    'en-US',
-    {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    }
-  );
+  const formattedDate = new Date(
+    appointment.date
+  ).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
-  const doctorImage = appointment.doctor?.imageUrl?.trim();
+  const doctorImage =
+    appointment.doctor?.imageUrl?.trim();
 
   return (
     <div className="bg-blue-600 rounded-3xl p-6 text-white shadow-lg space-y-6">
@@ -98,19 +104,12 @@ export default function UpcomingCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 pt-2">
+      <div className="pt-2">
         <Link
           href="/appointment-confirmed"
-          className="flex-1 bg-white hover:bg-blue-50 text-blue-600 font-semibold py-3 rounded-2xl text-sm transition text-center"
+          className="block w-full bg-white hover:bg-blue-50 text-blue-600 font-semibold py-3 rounded-2xl text-sm transition text-center"
         >
-          View Details
-        </Link>
-
-        <Link
-          href="/doctors"
-          className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-3 rounded-2xl text-sm transition text-center"
-        >
-          Reschedule
+          View Appointments
         </Link>
       </div>
     </div>

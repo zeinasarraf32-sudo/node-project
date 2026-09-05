@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bell } from 'lucide-react';
+
 import { axiosGet } from '@/lib/axios';
 import { Appointment } from '@/interfaces/interfaces';
 
@@ -10,102 +10,154 @@ import UpcomingCard from '@/components/dashboard/UpcomingCard';
 import QuickActions from '@/components/dashboard/QuickActions';
 import AIBanner from '@/components/dashboard/AIBanner';
 import AppointmentHistory from '@/components/dashboard/AppointmentHistory';
-import HealthSummary from '@/components/dashboard/HealthSummary';
 import RecommendedDoctors from '@/components/dashboard/RecommendedDoctors';
 import NotificationsList from '@/components/dashboard/NotificationsList';
 
+const emptySubscribe = () => () => {};
+
 export default function DashboardPage() {
-  const [patientId] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('patientId') || '9';
-    }
-    return '9';
-  });
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
-  const [patientName, setPatientName] = useState<string>('Patient');
+  const patientId = isClient
+    ? localStorage.getItem('patientId') ||
+      localStorage.getItem('userId') ||
+      ''
+    : '';
 
-  // جلب اسم المريض من localStorage إن وجد
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedName = localStorage.getItem('patientName') || localStorage.getItem('userName');
-      if (storedName) {
-        setPatientName(storedName);
-      }
-    }
-  }, []);
+  const patientName = isClient
+    ? localStorage.getItem('userName') ||
+      localStorage.getItem('patientName') ||
+      'Patient'
+    : 'Patient';
 
-  // Fetching real appointments data from DB
-  const { data: responseData, isLoading } = useQuery({
+  const {
+    data: responseData,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['patient-appointments', patientId],
-    queryFn: () => axiosGet<any>(`appointments?patientId=${patientId}`),
+    queryFn: () =>
+      axiosGet<Appointment[]>(
+        `appointments?patientId=${encodeURIComponent(patientId)}`
+      ),
     enabled: Boolean(patientId),
   });
 
-  // حماية الاستجابة واستخراج Array دائماً
-  const rawData = responseData?.data;
-  const appointments: Appointment[] = Array.isArray(rawData)
-    ? rawData
-    : Array.isArray(rawData?.appointments)
-    ? rawData.appointments
-    : Array.isArray(rawData?.data)
-    ? rawData.data
-    : [];
+  const appointments: Appointment[] =
+    responseData?.data ?? [];
 
-  // Filter Upcoming & History
-  const upcomingAppointments = appointments.filter(
-    (apt) => apt?.status === 'CONFIRMED' || apt?.status === 'PENDING'
-  );
-  const nextAppointment = upcomingAppointments[0] || null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  // في حال وجود موعد وقادرين على قراءة اسم المريض منه، نقوم بتحديث الاسم
-  const displayName =
-    (nextAppointment as any)?.patient?.fullName ||
-    (nextAppointment as any)?.patientName ||
-    patientName;
+  const upcomingAppointments = appointments
+    .filter((appointment) => {
+      const appointmentDate = new Date(
+        appointment.date
+      );
+
+      appointmentDate.setHours(0, 0, 0, 0);
+
+      const isUpcomingStatus =
+        appointment.status === 'CONFIRMED' ||
+        appointment.status === 'PENDING';
+
+      return (
+        isUpcomingStatus &&
+        appointmentDate >= today
+      );
+    })
+    .sort((a, b) => {
+      const dateDifference =
+        new Date(a.date).getTime() -
+        new Date(b.date).getTime();
+
+      if (dateDifference !== 0) {
+        return dateDifference;
+      }
+
+      return a.time.localeCompare(b.time);
+    });
+
+  const nextAppointment =
+    upcomingAppointments[0] ?? null;
 
   const historyAppointments = appointments
-    .filter((apt) => apt?.status === 'COMPLETED' || apt?.status === 'CANCELLED')
+    .filter(
+      (appointment) =>
+        appointment.status === 'COMPLETED' ||
+        appointment.status === 'CANCELLED'
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.date).getTime() -
+        new Date(a.date).getTime()
+    )
     .slice(0, 3);
 
-  const formattedToday = new Date().toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const formattedToday =
+    new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date());
 
   return (
     <div className="space-y-8 pb-16 min-h-screen bg-slate-50/50 p-6 md:p-10">
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-gray-400 font-medium">Good morning,</p>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            {displayName} 👋
-          </h1>
-          <p className="text-gray-500 text-xs mt-1">
-            Here's your health overview for today, {formattedToday}
-          </p>
-        </div>
-        <button className="p-2.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-gray-500 hover:text-gray-700 transition">
-          <Bell className="w-5 h-5" />
-        </button>
+      <div>
+        <p className="text-xs text-gray-400 font-medium">
+          Good morning,
+        </p>
+
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+          {patientName} 👋
+        </h1>
+
+        <p className="text-gray-500 text-xs mt-1">
+          Here&apos;s your health overview for today,{' '}
+          {formattedToday}
+        </p>
       </div>
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Column (Main Content) */}
+      {/* Error */}
+      {isError && (
+        <div className="bg-red-50 border border-red-100 text-red-600 text-xs font-medium px-4 py-3 rounded-2xl">
+          Failed to load your appointments.
+        </div>
+      )}
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+
+        {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
-          <UpcomingCard appointment={nextAppointment} isLoading={isLoading} />
+          <UpcomingCard
+            appointment={nextAppointment}
+            isLoading={isLoading}
+          />
+
           <QuickActions />
+
           <AIBanner />
-          <AppointmentHistory appointments={historyAppointments} isLoading={isLoading} />
+
+          <AppointmentHistory
+            appointments={historyAppointments}
+            isLoading={isLoading}
+          />
         </div>
 
-        {/* Right Column (Sidebar) */}
-        <div className="space-y-6">
-          <HealthSummary />
+        {/* Right Column */}
+        <div className="grid grid-rows-2 gap-6 h-full">
           <RecommendedDoctors />
-          <NotificationsList />
+
+          <NotificationsList
+            appointments={appointments}
+          />
         </div>
       </div>
     </div>

@@ -28,8 +28,23 @@ import {
 import { axiosPost } from '@/lib/axios';
 import { IDoctor } from '@/interfaces/interfaces';
 
-function errorMessage(error: unknown): string | null {
-  return error instanceof Error ? error.message : null;
+type DoctorFormData = {
+  fullName: string;
+  email: string;
+  password: string;
+  phone: string;
+  specialty: string;
+  experienceYrs: string;
+  consultationFee: string;
+  location: string;
+  imageUrl: string;
+  status: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE';
+};
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : 'Failed to create doctor.';
 }
 
 export default function AddDoctorPage() {
@@ -46,7 +61,7 @@ export default function AddDoctorPage() {
     useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] =
-    useState<IDoctor>({
+    useState<DoctorFormData>({
       fullName: '',
       email: '',
       password: '',
@@ -59,6 +74,9 @@ export default function AddDoctorPage() {
       status: 'ACTIVE',
     });
 
+  /*
+   * Create Doctor
+   */
   const createMutation = useMutation({
     mutationFn: (values: IDoctor) =>
       axiosPost<IDoctor, IDoctor>(
@@ -79,43 +97,59 @@ export default function AddDoctorPage() {
     },
   });
 
+  /*
+   * Form Fields
+   */
   const handleChange = (
-    e: React.ChangeEvent<
+    event: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement
     >
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
+    const { name, value } = event.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
     }));
   };
 
+  /*
+   * Doctor Image
+   */
   const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
+  event: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = event.target.files?.[0];
 
-    if (!file) return;
+  if (!file) {
+    return;
+  }
 
-    setSelectedFileName(file.name);
+  setSelectedFileName(file.name);
 
-    const reader = new FileReader();
+  const reader = new FileReader();
 
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        imageUrl: reader.result as string,
-      }));
-    };
+  reader.onloadend = () => {
+    const result = reader.result;
 
-    reader.readAsDataURL(file);
+    if (typeof result !== 'string') {
+      return;
+    }
+
+    setFormData((previous) => ({
+      ...previous,
+      imageUrl: result,
+    }));
   };
+
+  reader.readAsDataURL(file);
+};
 
   const handleRemoveImage = () => {
     setSelectedFileName('');
 
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((previous) => ({
+      ...previous,
       imageUrl: '',
     }));
 
@@ -124,37 +158,58 @@ export default function AddDoctorPage() {
     }
   };
 
+  /*
+   * Submit
+   */
   const handleSubmit = (
-    e: React.FormEvent
+    event: React.FormEvent<HTMLFormElement>
   ) => {
-    e.preventDefault();
+    event.preventDefault();
+
+    const fullName = formData.fullName.trim();
+    const email = formData.email.trim();
+    const password = formData.password.trim();
+    const specialty = formData.specialty.trim();
+
+    if (
+      !fullName ||
+      !email ||
+      !password ||
+      !specialty
+    ) {
+      return;
+    }
 
     const payload: IDoctor = {
-      fullName: formData.fullName.trim(),
-      email: formData.email.trim(),
-      password: formData.password?.trim(),
-      phone: formData.phone?.trim(),
-      specialty: formData.specialty.trim(),
+      fullName,
+      email,
+      password,
 
-      experienceYrs: formData.experienceYrs
-        ? Number(formData.experienceYrs)
-        : 0,
+      phone:
+        formData.phone.trim() ||
+        undefined,
+
+      specialty,
+
+      experienceYrs:
+        formData.experienceYrs !== ''
+          ? Number(formData.experienceYrs)
+          : 0,
 
       consultationFee:
-        formData.consultationFee
-          ? Number(
-              formData.consultationFee
-            )
+        formData.consultationFee !== ''
+          ? Number(formData.consultationFee)
           : 0,
 
       location:
-        formData.location?.trim(),
+        formData.location.trim() ||
+        undefined,
 
       imageUrl:
-        formData.imageUrl || undefined,
+        formData.imageUrl ||
+        undefined,
 
-      status:
-        formData.status || 'ACTIVE',
+      status: formData.status,
     };
 
     createMutation.mutate(payload);
@@ -162,12 +217,9 @@ export default function AddDoctorPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-10 px-4 sm:px-6 lg:px-8">
-
       <div className="max-w-3xl mx-auto">
-
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-
           <button
             type="button"
             onClick={() => router.back()}
@@ -185,27 +237,22 @@ export default function AddDoctorPage() {
               Create a new doctor profile
             </p>
           </div>
-
         </div>
 
         {/* Form */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-
           <form
             onSubmit={handleSubmit}
             className="p-8 space-y-6"
           >
-
-            {/* Account */}
+            {/* Account Credentials */}
             <div>
-
               <h2 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Account Credentials
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
                 {/* Full Name */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -275,10 +322,15 @@ export default function AddDoctorPage() {
                       type="button"
                       onClick={() =>
                         setShowPassword(
-                          !showPassword
+                          (current) => !current
                         )
                       }
                       className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      aria-label={
+                        showPassword
+                          ? 'Hide password'
+                          : 'Show password'
+                      }
                     >
                       {showPassword ? (
                         <EyeOff className="w-4 h-4" />
@@ -308,7 +360,6 @@ export default function AddDoctorPage() {
                     />
                   </div>
                 </div>
-
               </div>
             </div>
 
@@ -316,14 +367,12 @@ export default function AddDoctorPage() {
 
             {/* Doctor Profile */}
             <div>
-
               <h2 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Stethoscope className="w-4 h-4" />
                 Doctor Profile Attributes
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
                 {/* Specialty */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -388,9 +437,7 @@ export default function AddDoctorPage() {
                       type="number"
                       min="0"
                       name="experienceYrs"
-                      value={
-                        formData.experienceYrs
-                      }
+                      value={formData.experienceYrs}
                       onChange={handleChange}
                       placeholder="10"
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
@@ -398,7 +445,7 @@ export default function AddDoctorPage() {
                   </div>
                 </div>
 
-                {/* Fee */}
+                {/* Consultation Fee */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Consultation Fee ($)
@@ -411,20 +458,16 @@ export default function AddDoctorPage() {
                       type="number"
                       min="0"
                       name="consultationFee"
-                      value={
-                        formData.consultationFee
-                      }
+                      value={formData.consultationFee}
                       onChange={handleChange}
                       placeholder="35"
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                     />
                   </div>
                 </div>
-
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-
                 {/* Location */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -460,7 +503,6 @@ export default function AddDoctorPage() {
                   />
 
                   <div className="flex items-center gap-3 py-1">
-
                     <button
                       type="button"
                       onClick={() =>
@@ -473,7 +515,6 @@ export default function AddDoctorPage() {
                     </button>
 
                     <div className="flex items-center gap-2 text-xs text-slate-500 truncate select-none">
-
                       <span className="truncate max-w-[180px]">
                         {selectedFileName ||
                           'No file chosen'}
@@ -482,19 +523,16 @@ export default function AddDoctorPage() {
                       {selectedFileName && (
                         <button
                           type="button"
-                          onClick={
-                            handleRemoveImage
-                          }
+                          onClick={handleRemoveImage}
                           className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-rose-500 cursor-pointer"
+                          aria-label="Remove image"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
                       )}
-
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
 
@@ -509,20 +547,18 @@ export default function AddDoctorPage() {
 
             {/* Buttons */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                disabled={createMutation.isPending}
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
-                disabled={
-                  createMutation.isPending
-                }
+                disabled={createMutation.isPending}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {createMutation.isPending ? (
@@ -536,9 +572,7 @@ export default function AddDoctorPage() {
                   </>
                 )}
               </button>
-
             </div>
-
           </form>
         </div>
       </div>

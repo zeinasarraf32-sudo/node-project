@@ -3,8 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const updatePatientSchema = z.object({
-  fullName: z.string().trim().min(1, 'Full name is required'),
-  phone: z.string().trim().min(1, 'Phone is required'),
+  fullName: z
+    .string()
+    .trim()
+    .min(1, 'Full name is required'),
+
+  phone: z
+    .string()
+    .trim()
+    .min(1, 'Phone is required'),
 });
 
 export async function PUT(
@@ -15,16 +22,20 @@ export async function PUT(
 ) {
   try {
     const { id } = await context.params;
-
     const patientId = Number(id);
 
-    if (!Number.isInteger(patientId) || patientId <= 0) {
+    if (
+      !Number.isInteger(patientId) ||
+      patientId <= 0
+    ) {
       return NextResponse.json(
         {
           status: 400,
           message: 'Invalid patient ID',
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -38,49 +49,171 @@ export async function PUT(
         {
           status: 400,
           message: 'Invalid patient data',
-          data: validation.error.flatten().fieldErrors,
+          data:
+            validation.error.flatten()
+              .fieldErrors,
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const patient = await prisma.patient.update({
-      where: {
-        id: patientId,
-      },
-      data: {
-        fullName: validation.data.fullName,
-        phone: validation.data.phone,
-      },
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        phone: true,
-        imageUrl: true,
-        condition: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const patient =
+      await prisma.patient.update({
+        where: {
+          id: patientId,
+        },
+
+        data: {
+          fullName:
+            validation.data.fullName,
+          phone:
+            validation.data.phone,
+        },
+
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phone: true,
+          imageUrl: true,
+          condition: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
 
     return NextResponse.json(
       {
         status: 200,
-        message: 'Patient updated successfully',
+        message:
+          'Patient updated successfully',
         data: patient,
       },
-      { status: 200 }
+      {
+        status: 200,
+      }
     );
   } catch (error) {
-    console.error('Failed to update patient:', error);
+    console.error(
+      'Failed to update patient:',
+      error
+    );
 
     return NextResponse.json(
       {
         status: 500,
-        message: 'Failed to update patient',
+        message:
+          'Failed to update patient',
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  context: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  try {
+    const { id } = await context.params;
+    const patientId = Number(id);
+
+    if (
+      !Number.isInteger(patientId) ||
+      patientId <= 0
+    ) {
+      return NextResponse.json(
+        {
+          status: 400,
+          message: 'Invalid patient ID',
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const patient =
+      await prisma.patient.findUnique({
+        where: {
+          id: patientId,
+        },
+
+        select: {
+          id: true,
+          fullName: true,
+        },
+      });
+
+    if (!patient) {
+      return NextResponse.json(
+        {
+          status: 404,
+          message: 'Patient not found',
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    /*
+     * Delete appointments first,
+     * then delete the patient.
+     *
+     * Transaction ensures that both
+     * operations succeed together.
+     */
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.appointment.deleteMany({
+          where: {
+            patientId,
+          },
+        });
+
+        await tx.patient.delete({
+          where: {
+            id: patientId,
+          },
+        });
+      }
+    );
+
+    return NextResponse.json(
+      {
+        status: 200,
+        message:
+          'Patient and related appointments deleted successfully',
+        data: {
+          id: patient.id,
+        },
+      },
+      {
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error(
+      'Failed to delete patient:',
+      error
+    );
+
+    return NextResponse.json(
+      {
+        status: 500,
+        message:
+          'Failed to delete patient',
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

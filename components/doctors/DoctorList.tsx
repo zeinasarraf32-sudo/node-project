@@ -1,6 +1,9 @@
 'use client';
 
-import DoctorCard, { Doctor } from './DoctorCard';
+import DoctorCard, {
+  Doctor,
+} from './DoctorCard';
+
 import LoadingState from '@/components/ui/LoadingState';
 import EmptyState from '@/components/ui/EmptyState';
 import ErrorState from '@/components/ui/ErrorState';
@@ -19,7 +22,9 @@ export default function DoctorList({
   onRetry,
 }: DoctorListProps) {
   if (isLoading) {
-    return <LoadingState message="Loading doctors list..." />;
+    return (
+      <LoadingState message="Loading doctors list..." />
+    );
   }
 
   if (isError) {
@@ -44,13 +49,20 @@ export default function DoctorList({
     <div className="space-y-4">
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-slate-500">
-          Showing <span className="font-semibold text-slate-900">{doctors.length}</span> doctors
+          Showing{' '}
+          <span className="font-semibold text-slate-900">
+            {doctors.length}
+          </span>{' '}
+          doctors
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {doctors.map((doctor) => (
-          <DoctorCard key={doctor.id} doctor={doctor} />
+          <DoctorCard
+            key={doctor.id}
+            doctor={doctor}
+          />
         ))}
       </div>
     </div>

@@ -1,8 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import {
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import {
+  usePathname,
+  useRouter,
+} from 'next/navigation';
 import {
   Heart,
   User,
@@ -13,42 +19,75 @@ import {
   X,
 } from 'lucide-react';
 
+const emptySubscribe = () => () => {};
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [dropdownOpen, setDropdownOpen] =
+    useState(false);
 
-  // بيانات المستخدم
-  const [userName, setUserName] = useState('');
-  const [userEmail, setUserEmail] = useState('');
+  const [
+    mobileMenuOpen,
+    setMobileMenuOpen,
+  ] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
-    const token = localStorage.getItem('token');
-    const authStatus = localStorage.getItem('isLoggedIn') === 'true';
+  const token = isClient
+    ? localStorage.getItem('token')
+    : null;
 
-    setIsLoggedIn(Boolean(token || authStatus));
+  const authStatus = isClient
+    ? localStorage.getItem('isLoggedIn') ===
+      'true'
+    : false;
 
-    // قراءة بيانات المستخدم من localStorage
-    setUserName(localStorage.getItem('userName') || '');
-    setUserEmail(localStorage.getItem('userEmail') || '');
-  }, [pathname]);
+  const isLoggedIn = Boolean(
+    token || authStatus
+  );
+
+  const userName = isClient
+    ? localStorage.getItem('userName') || ''
+    : '';
+
+  const userEmail = isClient
+    ? localStorage.getItem('userEmail') || ''
+    : '';
 
   const authNavItems = [
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: 'AI assistant', href: '/AIassistant' },
-    { label: 'Find Doctors', href: '/doctors' },
-    { label: 'My Appointments', href: '/appointment-confirmed' },
+    {
+      label: 'Dashboard',
+      href: '/dashboard',
+    },
+    {
+      label: 'AI assistant',
+      href: '/AIassistant',
+    },
+    {
+      label: 'Find Doctors',
+      href: '/doctors',
+    },
+    {
+      label: 'My Appointments',
+      href: '/appointment-confirmed',
+    },
   ];
 
   const publicNavItems = [
-    { label: 'Home', href: '/' },
-    { label: 'Find Doctors', href: '/doctors' },
+    {
+      label: 'Home',
+      href: '/',
+    },
+    {
+      label: 'Find Doctors',
+      href: '/doctors',
+    },
   ];
 
   const handleSignOut = () => {
@@ -60,25 +99,26 @@ export default function Navbar() {
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userPhone');
 
-    setIsLoggedIn(false);
-    setUserName('');
-    setUserEmail('');
     setDropdownOpen(false);
     setMobileMenuOpen(false);
 
     router.push('/');
   };
 
-  const isPublicPage = pathname === '/' || pathname === '/login';
+  const isPublicPage =
+    pathname === '/' ||
+    pathname === '/login';
 
   const showAuthenticatedNav =
-    mounted && isLoggedIn && !isPublicPage;
+    isClient &&
+    isLoggedIn &&
+    !isPublicPage;
 
-  const currentNavItems = showAuthenticatedNav
-    ? authNavItems
-    : publicNavItems;
+  const currentNavItems =
+    showAuthenticatedNav
+      ? authNavItems
+      : publicNavItems;
 
-  // إنشاء Initials من اسم المستخدم
   const initials =
     userName
       .trim()
@@ -95,7 +135,11 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link
-          href={showAuthenticatedNav ? '/dashboard' : '/'}
+          href={
+            showAuthenticatedNav
+              ? '/dashboard'
+              : '/'
+          }
           className="flex items-center gap-2 shrink-0"
         >
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-sm">
@@ -103,14 +147,18 @@ export default function Navbar() {
           </div>
 
           <span className="text-xl font-bold text-gray-900">
-            Quick<span className="text-blue-600">Care</span>
+            Quick
+            <span className="text-blue-600">
+              Care
+            </span>
           </span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-1 bg-gray-50/80 p-1.5 rounded-2xl border border-gray-100">
           {currentNavItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href;
 
             return (
               <Link
@@ -130,16 +178,19 @@ export default function Navbar() {
 
         {/* Right Side */}
         <div className="flex items-center gap-2">
-
           {showAuthenticatedNav ? (
             <div className="relative">
 
               {/* User Button */}
               <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
+                type="button"
+                onClick={() =>
+                  setDropdownOpen(
+                    !dropdownOpen
+                  )
+                }
                 className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition"
               >
-
                 {/* User Name */}
                 <div className="text-right hidden sm:block">
                   <p className="text-xs font-bold text-gray-900">
@@ -170,15 +221,19 @@ export default function Navbar() {
                     </p>
 
                     <p className="text-xs text-gray-500 truncate">
-                      {userEmail || 'No email available'}
+                      {userEmail ||
+                        'No email available'}
                     </p>
                   </div>
 
                   {/* Profile */}
                   <button
+                    type="button"
                     onClick={() => {
                       setDropdownOpen(false);
-                      router.push('/profile');
+                      router.push(
+                        '/profile'
+                      );
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-slate-50 transition"
                   >
@@ -188,13 +243,13 @@ export default function Navbar() {
 
                   {/* Sign Out */}
                   <button
+                    type="button"
                     onClick={handleSignOut}
                     className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition"
                   >
                     <LogOut className="w-4 h-4 text-red-500" />
                     Sign Out
                   </button>
-
                 </div>
               )}
             </div>
@@ -203,7 +258,10 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-3">
 
               {/* Language */}
-              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition"
+              >
                 <Globe className="w-3.5 h-3.5 text-gray-500" />
                 <span>عربي</span>
               </button>
@@ -223,13 +281,17 @@ export default function Navbar() {
               >
                 Get Started
               </Link>
-
             </div>
           )}
 
           {/* Mobile Menu Button */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            type="button"
+            onClick={() =>
+              setMobileMenuOpen(
+                !mobileMenuOpen
+              )
+            }
             className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-slate-100 rounded-xl transition"
             aria-label="Toggle Menu"
           >
@@ -239,22 +301,23 @@ export default function Navbar() {
               <Menu className="w-6 h-6" />
             )}
           </button>
-
         </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-gray-100 px-4 pt-2 pb-4 space-y-2 shadow-lg animate-in slide-in-from-top-2">
-
           {currentNavItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() =>
+                  setMobileMenuOpen(false)
+                }
                 className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${
                   isActive
                     ? 'text-blue-600 bg-blue-50 font-semibold'
@@ -269,10 +332,11 @@ export default function Navbar() {
           {/* Mobile Public Navigation */}
           {!showAuthenticatedNav && (
             <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
-
               <Link
                 href="/login"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() =>
+                  setMobileMenuOpen(false)
+                }
                 className="block text-center py-2 text-sm font-semibold text-gray-700 hover:bg-slate-50 rounded-xl"
               >
                 Sign In
@@ -280,15 +344,15 @@ export default function Navbar() {
 
               <Link
                 href="/login"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() =>
+                  setMobileMenuOpen(false)
+                }
                 className="block text-center py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl shadow-xs"
               >
                 Get Started
               </Link>
-
             </div>
           )}
-
         </div>
       )}
     </nav>

@@ -1,31 +1,16 @@
 'use client';
 
-import {
-  use,
-  useState,
-} from 'react';
-
+import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-import {
-  useMutation,
-  useQuery,
-} from '@tanstack/react-query';
-
-import {
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 import DoctorSelector from '@/components/booking/DoctorSelector';
 import DatePicker from '@/components/booking/DatePicker';
 import TimeSlotSelector from '@/components/booking/TimeSlotSelector';
 import BookingSummary from '@/components/booking/BookingSummary';
 
-import {
-  axiosGet,
-  axiosPost,
-} from '@/lib/axios';
+import { axiosGet, axiosPost } from '@/lib/axios';
 
 import {
   Appointment,
@@ -37,9 +22,7 @@ import {
 export default function BookingPage({
   params,
 }: {
-  params: Promise<{
-    doctorId: string;
-  }>;
+  params: Promise<{ doctorId: string }>;
 }) {
   const router = useRouter();
   const resolvedParams = use(params);
@@ -60,8 +43,7 @@ export default function BookingPage({
   const [symptomsReason, setSymptomsReason] =
     useState('');
 
-  const [error, setError] =
-    useState('');
+  const [error, setError] = useState('');
 
   /*
    * GET Doctors
@@ -72,33 +54,26 @@ export default function BookingPage({
     isError: isDoctorsError,
   } = useQuery({
     queryKey: ['doctors'],
-
     queryFn: () =>
-      axiosGet<IBackendDoctor[]>(
-        'doctors'
-      ),
+      axiosGet<IBackendDoctor[]>('doctors'),
   });
 
   const doctorsData =
     doctorsResponse?.data || [];
 
   /*
-   * Find doctor using URL id.
+   * Find ACTIVE doctor from route.
    */
-  const foundDoctor =
-    doctorsData.find(
-      (doctor) =>
-        String(doctor.id) ===
-        routeDoctorId
-    );
+  const foundDoctor = doctorsData.find(
+    (doctor) =>
+      String(doctor.id) === routeDoctorId &&
+      doctor.status === 'ACTIVE'
+  );
 
-  const fetchedDoctor:
-    IBookingDoctor | null =
+  const fetchedDoctor: IBookingDoctor | null =
     foundDoctor
       ? {
-          id: String(
-            foundDoctor.id
-          ),
+          id: String(foundDoctor.id),
 
           name:
             foundDoctor.fullName ||
@@ -107,15 +82,14 @@ export default function BookingPage({
 
           specialty:
             foundDoctor.specialty ||
-            'Specialist',
+            'Not specified',
 
-          fee:
-            Number(
-              foundDoctor.consultationFee ??
-                foundDoctor.fee ??
-                foundDoctor.price ??
-                0
-            ) || 0,
+          fee: Number(
+            foundDoctor.consultationFee ??
+            foundDoctor.fee ??
+            foundDoctor.price ??
+            0
+          ),
 
           avatar:
             foundDoctor.imageUrl ||
@@ -124,121 +98,126 @@ export default function BookingPage({
 
           location:
             foundDoctor.location ||
-            'Clinic',
-
-          rating:
-            Number(
-              foundDoctor.rating ??
-                5
-            ),
-
-          reviewsCount:
-            Number(
-              foundDoctor.reviewsCount ??
-                0
-            ),
+            'Not provided',
         }
       : null;
 
-  /*
-   * Selected Doctor
-   */
   const selectedDoctor =
-    overrideDoctor ||
-    fetchedDoctor;
+    overrideDoctor || fetchedDoctor;
 
   /*
-   * Patient data
+   * Patient Data
    */
-  const [patientData] =
-    useState<{
-      id: string;
-      name: string;
-    }>(() => {
-      if (
-        typeof window ===
-        'undefined'
-      ) {
-        return {
-          id: '',
-          name: 'Guest Patient',
-        };
+  const [patientData] = useState<{
+    id: string;
+    name: string;
+  }>(() => {
+    if (typeof window === 'undefined') {
+      return {
+        id: '',
+        name: 'Guest Patient',
+      };
+    }
+
+    const storedId =
+      localStorage.getItem('patientId') ||
+      localStorage.getItem('userId') ||
+      '';
+
+    const storedName =
+      localStorage.getItem('userName') ||
+      'Patient';
+
+    return {
+      id: storedId,
+      name: storedName,
+    };
+  });
+
+  /*
+   * Doctor Availability
+   */
+  const selectedDateIso =
+    selectedDate
+      ? selectedDate.toISOString()
+      : '';
+
+  const availabilityDoctorId =
+    selectedDoctor?.id || '';
+
+  const {
+    data: availabilityResponse,
+    isLoading: isAvailabilityLoading,
+    isError: isAvailabilityError,
+    refetch: refetchAvailability,
+  } = useQuery({
+    queryKey: [
+      'doctor-availability',
+      availabilityDoctorId,
+      selectedDateIso,
+    ],
+
+    queryFn: () =>
+      axiosGet<Appointment[]>(
+        `appointments?doctorId=${encodeURIComponent(
+          availabilityDoctorId
+        )}&date=${encodeURIComponent(
+          selectedDateIso
+        )}`
+      ),
+
+    enabled: Boolean(
+      availabilityDoctorId &&
+      selectedDateIso
+    ),
+  });
+
+  const bookedTimes =
+    availabilityResponse?.data?.map(
+      (appointment) => appointment.time
+    ) || [];
+
+  /*
+   * Create Appointment
+   */
+  const bookingMutation = useMutation({
+    mutationFn: (
+      newBooking: CreateAppointmentBody
+    ) =>
+      axiosPost<
+        CreateAppointmentBody,
+        Appointment
+      >('appointments', newBooking),
+
+    onSuccess: (response) => {
+      setError('');
+
+      if (response.data?.id) {
+        sessionStorage.setItem(
+          'lastAppointmentId',
+          String(response.data.id)
+        );
       }
 
-      const storedId =
-        localStorage.getItem(
-          'patientId'
-        ) ||
-        localStorage.getItem(
-          'userId'
-        ) ||
-        '';
+      router.push('/appointment-success');
+    },
 
-      const storedName =
-        localStorage.getItem(
-          'userName'
-        ) ||
-        'Patient';
-
-      return {
-        id: storedId,
-        name: storedName,
-      };
-    });
-
-  /*
-   * POST Appointment
-   */
-  const bookingMutation =
-    useMutation({
-      mutationFn: (
-        newBooking:
-          CreateAppointmentBody
-      ) =>
-        axiosPost<
-          CreateAppointmentBody,
-          Appointment
-        >(
-          'appointments',
-          newBooking
-        ),
-
-      onSuccess: (
-        response
-      ) => {
-        setError('');
-
-        if (
-          response.data?.id
-        ) {
-          sessionStorage.setItem(
-            'lastAppointmentId',
-            String(
-              response.data.id
-            )
-          );
-        }
-
-        router.push(
-          '/appointment-success'
-        );
-      },
-
-      onError: (
+    onError: (bookingError) => {
+      console.error(
+        'Failed to book appointment:',
         bookingError
-      ) => {
-        console.error(
-          'Failed to book appointment:',
-          bookingError
-        );
+      );
 
-        setError(
-          bookingError instanceof Error
-            ? bookingError.message
-            : 'Failed to confirm booking. Please try again.'
-        );
-      },
-    });
+      setSelectedTime(null);
+      void refetchAvailability();
+
+      setError(
+        bookingError instanceof Error
+          ? bookingError.message
+          : 'Failed to confirm booking. Please try again.'
+      );
+    },
+  });
 
   /*
    * Confirm Booking
@@ -247,26 +226,56 @@ export default function BookingPage({
     setError('');
 
     if (!selectedDoctor) {
-      setError(
-        'Please select a doctor.'
-      );
-
+      setError('Please select a doctor.');
       return;
     }
 
     if (!selectedDate) {
-      setError(
-        'Please select an appointment date.'
-      );
+      setError('Please select an appointment date.');
+      return;
+    }
 
+    const selectedDay = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate()
+    );
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDay < today) {
+      setError(
+        'Appointments cannot be booked in the past.'
+      );
       return;
     }
 
     if (!selectedTime) {
-      setError(
-        'Please select a time slot.'
-      );
+      setError('Please select a time slot.');
+      return;
+    }
 
+    if (isAvailabilityLoading) {
+      setError(
+        'Please wait while we check time slot availability.'
+      );
+      return;
+    }
+
+    if (isAvailabilityError) {
+      setError(
+        'Could not check time slot availability. Please try again.'
+      );
+      return;
+    }
+
+    if (bookedTimes.includes(selectedTime)) {
+      setSelectedTime(null);
+
+      setError(
+        'This time slot is already booked. Please choose another time.'
+      );
       return;
     }
 
@@ -274,7 +283,6 @@ export default function BookingPage({
       setError(
         'Patient information is missing. Please log in again.'
       );
-
       return;
     }
 
@@ -285,46 +293,29 @@ export default function BookingPage({
       Number(selectedDoctor.id);
 
     if (
-      Number.isNaN(
-        numericPatientId
-      ) ||
+      !Number.isInteger(numericPatientId) ||
       numericPatientId <= 0
     ) {
       setError(
         'Invalid patient information. Please log in again.'
       );
-
       return;
     }
 
     if (
-      Number.isNaN(
-        numericDoctorId
-      ) ||
+      !Number.isInteger(numericDoctorId) ||
       numericDoctorId <= 0
     ) {
-      setError(
-        'Invalid doctor information.'
-      );
-
+      setError('Invalid doctor information.');
       return;
     }
 
     bookingMutation.mutate({
-      doctorId:
-        numericDoctorId,
-
-      patientId:
-        numericPatientId,
-
-      date:
-        selectedDate.toISOString(),
-
-      time:
-        selectedTime,
-
-      reason:
-        symptomsReason.trim(),
+      doctorId: numericDoctorId,
+      patientId: numericPatientId,
+      date: selectedDate.toISOString(),
+      time: selectedTime,
+      reason: symptomsReason.trim(),
     });
   };
 
@@ -344,7 +335,7 @@ export default function BookingPage({
   }
 
   /*
-   * API Error State
+   * Error State
    */
   if (isDoctorsError) {
     return (
@@ -355,11 +346,7 @@ export default function BookingPage({
 
         <button
           type="button"
-          onClick={() =>
-            router.push(
-              '/doctors'
-            )
-          }
+          onClick={() => router.push('/doctors')}
           className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold"
         >
           Back to Doctors
@@ -369,22 +356,18 @@ export default function BookingPage({
   }
 
   /*
-   * Doctor Not Found State
+   * Doctor Not Found / Not Active
    */
   if (!selectedDoctor) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
         <p className="text-gray-600 font-medium">
-          Doctor not found.
+          Doctor is not available for booking.
         </p>
 
         <button
           type="button"
-          onClick={() =>
-            router.push(
-              '/doctors'
-            )
-          }
+          onClick={() => router.push('/doctors')}
           className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold"
         >
           Back to Doctors
@@ -395,51 +378,47 @@ export default function BookingPage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Book an Appointment
+        </h1>
 
-        {/* LEFT */}
+        <p className="text-sm text-gray-500 mt-1">
+          Select a doctor, choose a date and time,
+          and confirm your appointment.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Side */}
         <div className="lg:col-span-2 space-y-8">
           <DoctorSelector
-            selectedDoctorId={
-              selectedDoctor.id
-            }
-            onSelectDoctor={(
-              doctor
-            ) => {
-              setOverrideDoctor(
-                doctor
-              );
-
+            selectedDoctorId={selectedDoctor.id}
+            onSelectDoctor={(doctor) => {
+              setOverrideDoctor(doctor);
+              setSelectedTime(null);
               setError('');
             }}
           />
 
           <DatePicker
-            selectedDate={
-              selectedDate
-            }
-            onSelectDate={(
-              date
-            ) => {
-              setSelectedDate(
-                date
-              );
-
+            selectedDate={selectedDate}
+            onSelectDate={(date) => {
+              setSelectedDate(date);
+              setSelectedTime(null);
               setError('');
             }}
           />
 
           <TimeSlotSelector
-            selectedTime={
-              selectedTime
-            }
-            onSelectTime={(
-              time
-            ) => {
-              setSelectedTime(
-                time
-              );
-
+            selectedTime={selectedTime}
+            bookedTimes={bookedTimes}
+            isLoading={isAvailabilityLoading}
+            isError={isAvailabilityError}
+            disabled={!selectedDate}
+            onSelectTime={(time) => {
+              setSelectedTime(time);
               setError('');
             }}
           />
@@ -451,15 +430,9 @@ export default function BookingPage({
             </h3>
 
             <textarea
-              value={
-                symptomsReason
-              }
-              onChange={(
-                event
-              ) =>
-                setSymptomsReason(
-                  event.target.value
-                )
+              value={symptomsReason}
+              onChange={(event) =>
+                setSymptomsReason(event.target.value)
               }
               placeholder="Describe your symptoms or reason for appointment (optional)..."
               className="w-full p-3.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 min-h-[100px] resize-none"
@@ -467,10 +440,8 @@ export default function BookingPage({
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* Right Side */}
         <div className="lg:col-span-1 space-y-4">
-
-          {/* Error State */}
           {error && (
             <div className="flex items-start gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -482,24 +453,12 @@ export default function BookingPage({
           )}
 
           <BookingSummary
-            doctor={
-              selectedDoctor
-            }
-            selectedDate={
-              selectedDate
-            }
-            selectedTime={
-              selectedTime
-            }
-            patientName={
-              patientData.name
-            }
-            onConfirm={
-              handleConfirm
-            }
-            isSubmitting={
-              bookingMutation.isPending
-            }
+            doctor={selectedDoctor}
+            selectedDate={selectedDate}
+            selectedTime={selectedTime}
+            patientName={patientData.name}
+            onConfirm={handleConfirm}
+            isSubmitting={bookingMutation.isPending}
           />
         </div>
       </div>

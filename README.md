@@ -1,109 +1,203 @@
-# QuickCare Assistant
+# QuickCare
 
-QuickCare Assistant is a medical appointment platform that helps patients find doctors and book appointments through a simple and user-friendly experience.
+QuickCare is a medical appointment platform that helps patients find doctors, book appointments, manage their appointments, and use an AI assistant for general medical guidance.
 
-The application connects the frontend to a real backend API and stores appointment data persistently in Supabase PostgreSQL using Prisma.
+The application connects a Next.js frontend to real API endpoints and stores core application data persistently in Supabase PostgreSQL using Prisma.
 
 ## Problem
 
-Finding the right doctor and booking a medical appointment can be time-consuming and confusing.
+Finding the appropriate doctor and booking a medical appointment can be time-consuming and confusing.
 
-QuickCare Assistant provides patients with a simple flow for finding doctors, selecting an appointment date and time, booking an appointment, and managing their appointments.
+QuickCare provides a simple patient flow for browsing doctors, selecting an appointment date and time, confirming a booking, and viewing appointments after they are stored in the database.
+
+The platform also includes an AI assistant that can provide general guidance about the type of specialist a patient may need.
+
+The AI assistant is not intended to provide medical diagnoses or replace professional medical advice.
 
 ## MVP Features
 
-1. Patient authentication
-2. Browse and search doctors
-3. Book a medical appointment
-4. View appointment confirmation and details
-5. View and manage patient appointments
+- Patient signup and login
+- Browse and search doctors
+- View doctor information
+- Select an appointment date and available time
+- Book a medical appointment
+- View appointment confirmation
+- View upcoming and previous appointments
+- Persistent appointment data using PostgreSQL
+- Admin doctor and patient management
+- AI assistant for general specialist guidance
 
 ## Core User Flow
 
-Find Doctor → Select Doctor → Choose Date and Time → Confirm Appointment → Success → View Appointments → View Details
+Patient Login / Signup → Browse Doctors → Select Doctor → Choose Date and Time → Enter Appointment Reason → Confirm Appointment → Appointment Success → View Appointments
 
-Appointment data is stored in PostgreSQL and remains available after refreshing the application.
+Appointment data is stored in Supabase PostgreSQL and remains available after refreshing the application.
 
 ## Tech Stack
 
-- Next.js
-- React
+### Frontend
+
+- Next.js 16
+- React 19
 - TypeScript
 - Tailwind CSS
-- Next.js API Routes
 - TanStack React Query
 - Axios
-- Zod
+- Lucide React
+
+### Backend
+
+- Next.js Route Handlers
+- Zod validation
 - Prisma 7
+
+### Database
+
 - Supabase PostgreSQL
+
+### AI
+
+- OpenAI API
+- GPT-4o-mini
+
+### Deployment
+
 - Vercel
 
 ## Database
 
-The application uses Supabase PostgreSQL as the database.
+QuickCare uses Supabase PostgreSQL for persistent application data.
 
-Prisma is used as the ORM between the API layer and PostgreSQL.
+Prisma is used as the ORM between the Next.js API layer and PostgreSQL.
 
 Main database models:
 
 - Patient
 - Doctor
-- DoctorSchedule
 - Appointment
-- DoctorReview
-- AiConversation
+
+The models and their relations are defined in:
+
+```text
+prisma/schema.prisma
+```
+
+Appointments are connected to both a patient and a doctor.
+
+The appointment model also protects doctor time slots so that the same doctor cannot be booked for the same date and time more than once.
 
 ## API Routes
 
-### Appointments
+### Authentication
 
-- `GET /api/appointments`
-- `POST /api/appointments`
-- `PUT /api/appointments/[id]`
-- `DELETE /api/appointments/[id]`
+```text
+POST /api/auth/login
+POST /api/auth/signup
+```
 
 ### Doctors
 
-- `GET /api/doctors`
-- `POST /api/doctors`
-- `PUT /api/doctors/[id]`
-- `DELETE /api/doctors/[id]`
+```text
+GET    /api/doctors
+POST   /api/doctors
+PUT    /api/doctors/[id]
+DELETE /api/doctors/[id]
+```
 
-### Authentication
+### Patients
 
-- `POST /api/auth/login`
-- `POST /api/auth/signup`
+```text
+GET    /api/patients
+PUT    /api/patients/[id]
+DELETE /api/patients/[id]
+```
 
-## Validation and UI States
+### Patient Profile
 
-Zod is used to validate appointment data before it is stored in the database.
+```text
+/api/patient/profile
+```
 
-The main user flow includes:
+### Appointments
 
-- Loading State
-- Error State
-- Empty State
-- Success State
-- Not Found State
-- Form Validation
+```text
+GET    /api/appointments
+POST   /api/appointments
+PUT    /api/appointments/[id]
+DELETE /api/appointments/[id]
+```
 
-Invalid requests return controlled API error responses instead of being inserted into the database.
+The appointments GET endpoint can also be used with query parameters such as patient, doctor, and appointment date filters.
+
+### AI Assistant
+
+```text
+POST /api/chat
+```
+
+The AI endpoint validates incoming messages before sending them to the OpenAI API.
+
+## Application Routes
+
+```text
+/                       Home
+/login                  Patient authentication
+/doctors                Browse doctors
+/booking/[doctorId]     Book an appointment
+/appointment-success    Booking success
+/appointment-confirmed  Patient appointments
+/dashboard              Patient dashboard
+/profile                Patient profile
+/AIassistant            AI assistant
+/admin                   Admin dashboard
+/admin/doctors/add       Add doctor
+```
+
+## Validation and Application States
+
+Zod is used to validate API request data before it is written to the database.
+
+The application includes handling for important UI states such as:
+
+- Loading
+- Error
+- Empty
+- Success
+- Not Found
+- Form validation
+
+The booking flow also prevents invalid appointment requests such as:
+
+- Missing required information
+- Invalid patient or doctor identifiers
+- Booking dates in the past
+- Booking an already reserved doctor time slot
+
+Invalid requests return controlled API responses instead of creating invalid database records.
 
 ## Environment Variables
 
-Create a `.env` file in the project root.
+Create a `.env` or `.env.local` file in the project root.
 
-Required environment variables:
+Required environment variable names:
 
 ```env
 DATABASE_URL=
 DIRECT_URL=
-NEXT_PUBLIC_BASE_URL=
+OPENAI_API_KEY=
 ```
 
-Do not commit real database credentials to GitHub.
+`DATABASE_URL` and `DIRECT_URL` are used for the Supabase PostgreSQL connection.
+
+`OPENAI_API_KEY` is used by the AI assistant API route.
+
+Real environment variable values must never be committed to GitHub.
+
+An `.env.example` file is included in the repository with variable names only.
 
 ## Local Setup
+
+Clone the repository and move into the project directory.
 
 Install dependencies:
 
@@ -111,7 +205,7 @@ Install dependencies:
 npm install
 ```
 
-Generate Prisma Client:
+Generate the Prisma Client:
 
 ```bash
 npx prisma generate
@@ -123,66 +217,133 @@ Start the development server:
 npm run dev
 ```
 
-Then open the application at:
+Open:
 
-`http://localhost:3000`
+```text
+http://localhost:3000
+```
 
-## Production Build
+## Verification
 
-Before deployment, run:
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+Create a production build:
 
 ```bash
 npm run build
 ```
 
-## Deployment
-
-The application is deployed using Vercel.
-
-Production database environment variables must be configured in Vercel.
+The production build should complete successfully before deployment.
 
 ## Persistence Test
 
-To verify the main connected flow:
+The main connected booking flow can be tested using the following process:
 
-1. Log in as a patient.
+1. Sign up or log in as a patient.
 2. Open the Doctors page.
-3. Select a doctor.
-4. Choose a date and time.
-5. Confirm the appointment.
-6. Verify the Success page.
-7. Open My Appointments.
-8. Refresh the page.
-9. Verify that the appointment still exists.
-10. Open Appointment Details.
+3. Select an active doctor.
+4. Choose an appointment date.
+5. Select an available time.
+6. Enter the appointment reason.
+7. Confirm the appointment.
+8. Verify the Appointment Success page.
+9. Open My Appointments.
+10. Verify that the new appointment appears.
+11. Refresh the page.
+12. Verify that the appointment still exists.
 
-This confirms that appointment data is persisted in PostgreSQL rather than stored as mock frontend data.
+This confirms that the appointment is persisted in PostgreSQL rather than stored only in frontend state or mock data.
+
+## AI Assistant
+
+QuickCare includes an AI assistant that accepts patient messages and returns general guidance.
+
+The assistant is designed to:
+
+- Provide general health guidance
+- Suggest the appropriate type of medical specialist when relevant
+- Avoid presenting itself as a medical diagnosis
+- Encourage urgent professional care for emergency symptoms
+- Avoid inventing QuickCare doctor names, appointment availability, or database information
+
+The AI implementation depends on a valid OpenAI API key and available API quota.
+
+The main appointment booking flow works independently from the AI service.
 
 ## Project Structure
 
 ```text
 app/
-  api/
-    appointments/
-    auth/
-    doctors/
+├── (admin)/
+├── (patient)/
+└── api/
 
 components/
+├── admin/
+├── assistant/
+├── appointment/
+├── booking/
+├── dashboard/
+├── doctors/
+├── home/
+└── navbar/
+
 interfaces/
 lib/
 prisma/
 ```
 
+## Deployment
+
+The application is prepared for deployment using Vercel.
+
+The following environment variables must be configured in the Vercel project:
+
+```text
+DATABASE_URL
+DIRECT_URL
+OPENAI_API_KEY
+```
+
+Database credentials and API keys must remain server-side and must not be exposed through `NEXT_PUBLIC_` environment variables.
+
+After deployment, the production application should be tested in a private/incognito browser window.
+
 ## Current Limitations
 
-- Authentication is implemented as a simplified MVP authentication flow.
-- Some secondary dashboard and admin content may use static presentation data.
-- The main production MVP focuses on the patient appointment booking flow.
+- Authentication is implemented as a simplified MVP authentication system.
+- Password hashing and a complete production authentication/session solution are not yet implemented.
+- AI responses depend on OpenAI API availability and quota.
+- Appointment rescheduling is not currently part of the implemented MVP.
+- Some optional profile information is not part of the persistent database schema.
 
 ## Future Improvements
 
-- Secure password hashing and session-based authentication
-- Doctor availability management
+- Secure password hashing
+- Production-grade session authentication
+- Doctor-managed availability schedules
 - Appointment rescheduling
-- Improved AI doctor recommendations
-- Email and appointment notifications
+- Email appointment notifications
+- Improved AI-assisted specialist guidance
+- Additional profile persistence
+- Extended automated testing
+
+## Project Goal
+
+The goal of QuickCare is to demonstrate a complete full-stack product flow:
+
+```text
+User Interface
+→ API
+→ Validation
+→ Prisma
+→ PostgreSQL
+→ Persistent Data
+→ Production Deployment
+```
+
+The primary focus of the MVP is a reliable end-to-end patient appointment booking experience.

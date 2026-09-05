@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+
 import {
   Search,
   Pencil,
   Trash2,
-  Star,
   Loader2,
   X,
+  User,
 } from 'lucide-react';
 
 import {
@@ -24,38 +25,56 @@ import {
 
 import { IDoctor } from '@/interfaces/interfaces';
 
-function errorMessage(error: unknown): string | null {
-  return error instanceof Error ? error.message : null;
+function errorMessage(
+  error: unknown
+): string | null {
+  return error instanceof Error
+    ? error.message
+    : null;
 }
 
 type EditDoctorData = {
   fullName: string;
   specialty: string;
   consultationFee: number;
-  status: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE';
+  status:
+    | 'ACTIVE'
+    | 'ON_LEAVE'
+    | 'INACTIVE';
   location: string;
 };
 
 export default function DoctorsTable() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] =
+    useState('');
 
-  const [selectedDoctor, setSelectedDoctor] =
-    useState<IDoctor | null>(null);
+  const [
+    selectedDoctor,
+    setSelectedDoctor,
+  ] = useState<IDoctor | null>(null);
 
-  const [isEditModalOpen, setIsEditModalOpen] =
-    useState(false);
+  const [
+    isEditModalOpen,
+    setIsEditModalOpen,
+  ] = useState(false);
 
-  const [editFormData, setEditFormData] =
-    useState<EditDoctorData>({
-      fullName: '',
-      specialty: '',
-      consultationFee: 0,
-      status: 'ACTIVE',
-      location: '',
-    });
+  const [
+    editFormData,
+    setEditFormData,
+  ] = useState<EditDoctorData>({
+    fullName: '',
+    specialty: '',
+    consultationFee: 0,
+    status: 'ACTIVE',
+    location: '',
+  });
 
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
 
+  /*
+   * GET Doctors
+   */
   const {
     data: responseData,
     isLoading,
@@ -64,112 +83,162 @@ export default function DoctorsTable() {
     queryKey: ['doctors'],
 
     queryFn: () =>
-      axiosGet<IDoctor[]>('doctors'),
-  });
-
-  const doctorsList = responseData?.data ?? [];
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) =>
-      axiosDelete(`doctors/${id}`),
-
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['doctors'],
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: ['admin-doctors-stats'],
-      });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: Partial<IDoctor>;
-    }) =>
-      axiosPut<Partial<IDoctor>, IDoctor>(
-        `doctors/${id}`,
-        data
+      axiosGet<IDoctor[]>(
+        'doctors'
       ),
-
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['doctors'],
-      });
-
-      setIsEditModalOpen(false);
-      setSelectedDoctor(null);
-    },
   });
 
-  // ==========================================
-  // DELETE HANDLER
-  // ==========================================
+  const doctorsList =
+    responseData?.data ?? [];
 
+  /*
+   * DELETE Doctor
+   */
+  const deleteMutation =
+    useMutation({
+      mutationFn: (id: number) =>
+        axiosDelete(
+          `doctors/${id}`
+        ),
+
+      onSuccess: async () => {
+        /*
+         * Doctor deletion can also
+         * affect appointments and stats.
+         */
+        await queryClient.invalidateQueries();
+      },
+    });
+
+  /*
+   * UPDATE Doctor
+   */
+  const updateMutation =
+    useMutation({
+      mutationFn: ({
+        id,
+        data,
+      }: {
+        id: number;
+        data: Partial<IDoctor>;
+      }) =>
+        axiosPut<
+          Partial<IDoctor>,
+          IDoctor
+        >(
+          `doctors/${id}`,
+          data
+        ),
+
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ['doctors'],
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: [
+            'admin-doctors-stats',
+          ],
+        });
+
+        setIsEditModalOpen(false);
+        setSelectedDoctor(null);
+      },
+    });
+
+  /*
+   * DELETE HANDLER
+   */
   const handleDelete = (
     id: number | undefined,
     name: string
   ) => {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
 
-    const confirmed = confirm(
-      `Are you sure you want to delete ${name}?`
-    );
+    const confirmed =
+      window.confirm(
+        `Are you sure you want to delete ${name}?\n\nAll appointments related to this doctor will also be deleted.`
+      );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     deleteMutation.mutate(id);
   };
 
-  // ==========================================
-  // OPEN EDIT
-  // ==========================================
-
-  const handleOpenEdit = (doctor: IDoctor) => {
-    if (!doctor.id) return;
+  /*
+   * OPEN EDIT
+   */
+  const handleOpenEdit = (
+    doctor: IDoctor
+  ) => {
+    if (!doctor.id) {
+      return;
+    }
 
     setSelectedDoctor(doctor);
 
     setEditFormData({
-      fullName: doctor.fullName || '',
-      specialty: doctor.specialty || '',
+      fullName:
+        doctor.fullName || '',
+
+      specialty:
+        doctor.specialty || '',
+
       consultationFee:
-        Number(doctor.consultationFee) || 0,
+        Number(
+          doctor.consultationFee
+        ) || 0,
+
       status:
-        doctor.status === 'ON_LEAVE'
+        doctor.status ===
+        'ON_LEAVE'
           ? 'ON_LEAVE'
-          : doctor.status === 'INACTIVE'
+          : doctor.status ===
+              'INACTIVE'
             ? 'INACTIVE'
             : 'ACTIVE',
-      location: doctor.location || '',
+
+      location:
+        doctor.location || '',
     });
 
     setIsEditModalOpen(true);
   };
 
-  // ==========================================
-  // SAVE EDIT
-  // ==========================================
-
+  /*
+   * SAVE EDIT
+   */
   const handleSaveEdit = (
-    e: React.FormEvent
+    event: React.FormEvent
   ) => {
-    e.preventDefault();
+    event.preventDefault();
 
-    if (!selectedDoctor?.id) return;
+    if (!selectedDoctor?.id) {
+      return;
+    }
 
-    const payload: Partial<IDoctor> = {
-      fullName: editFormData.fullName.trim(),
-      specialty: editFormData.specialty.trim(),
+    const payload:
+      Partial<IDoctor> = {
+      fullName:
+        editFormData.fullName.trim(),
+
+      specialty:
+        editFormData.specialty.trim(),
+
       consultationFee:
-        Number(editFormData.consultationFee),
-      status: editFormData.status,
-      location: editFormData.location.trim(),
+        Number(
+          editFormData.consultationFee
+        ),
+
+      status:
+        editFormData.status,
+
+      location:
+        editFormData.location.trim(),
     };
 
     updateMutation.mutate({
@@ -178,27 +247,39 @@ export default function DoctorsTable() {
     });
   };
 
-  // ==========================================
-  // FILTER
-  // ==========================================
+  /*
+   * FILTER
+   */
+  const filteredDoctors =
+    doctorsList.filter(
+      (doctor) => {
+        const name =
+          doctor.fullName
+            ?.toLowerCase() ||
+          '';
 
-  const filteredDoctors = doctorsList.filter(
-    (doctor) => {
-      const name =
-        doctor.fullName?.toLowerCase() || '';
+        const specialty =
+          doctor.specialty
+            ?.toLowerCase() ||
+          '';
 
-      const specialty =
-        doctor.specialty?.toLowerCase() || '';
+        const location =
+          doctor.location
+            ?.toLowerCase() ||
+          '';
 
-      const search =
-        searchTerm.toLowerCase();
+        const search =
+          searchTerm
+            .trim()
+            .toLowerCase();
 
-      return (
-        name.includes(search) ||
-        specialty.includes(search)
-      );
-    }
-  );
+        return (
+          name.includes(search) ||
+          specialty.includes(search) ||
+          location.includes(search)
+        );
+      }
+    );
 
   return (
     <div className="space-y-4">
@@ -211,18 +292,32 @@ export default function DoctorsTable() {
           type="text"
           placeholder="Search doctors..."
           value={searchTerm}
-          onChange={(e) =>
-            setSearchTerm(e.target.value)
+          onChange={(event) =>
+            setSearchTerm(
+              event.target.value
+            )
           }
           className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-xs"
         />
       </div>
 
+      {/* Delete Error */}
+      {deleteMutation.error && (
+        <div className="px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-medium text-rose-600">
+          {errorMessage(
+            deleteMutation.error
+          ) ||
+            'Failed to delete doctor'}
+        </div>
+      )}
+
+      {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
 
           <table className="w-full text-left border-collapse">
 
+            {/* Header */}
             <thead>
               <tr className="border-b border-slate-100 text-[11px] font-semibold text-slate-400 tracking-wider">
 
@@ -235,11 +330,11 @@ export default function DoctorsTable() {
                 </th>
 
                 <th className="py-4 px-6">
-                  Patients
+                  Fee
                 </th>
 
                 <th className="py-4 px-6">
-                  Rating
+                  Location
                 </th>
 
                 <th className="py-4 px-6">
@@ -249,7 +344,6 @@ export default function DoctorsTable() {
                 <th className="py-4 px-6 text-right">
                   Actions
                 </th>
-
               </tr>
             </thead>
 
@@ -263,6 +357,7 @@ export default function DoctorsTable() {
                     className="py-8 text-center text-slate-400"
                   >
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+
                     Loading doctors data...
                   </td>
                 </tr>
@@ -282,7 +377,9 @@ export default function DoctorsTable() {
 
               {/* Empty */}
               {!isLoading &&
-                filteredDoctors.length === 0 && (
+                !isError &&
+                filteredDoctors.length ===
+                  0 && (
                   <tr>
                     <td
                       colSpan={6}
@@ -294,126 +391,142 @@ export default function DoctorsTable() {
                 )}
 
               {/* Doctors */}
-              {filteredDoctors.map((doctor) => {
+              {filteredDoctors.map(
+                (doctor) => {
+                  const doctorName =
+                    doctor.fullName ||
+                    'Dr. Unknown';
 
-                const doctorName =
-                  doctor.fullName ||
-                  'Dr. Unknown';
+                  const doctorStatus =
+                    doctor.status ||
+                    'INACTIVE';
 
-                const isActive =
-                  doctor.status === 'ACTIVE';
+                  const isActive =
+                    doctorStatus ===
+                    'ACTIVE';
 
-                return (
-                  <tr
-                    key={doctor.id}
-                    className="hover:bg-slate-50/50 transition-colors"
-                  >
+                  const isDeleting =
+                    deleteMutation.isPending &&
+                    deleteMutation.variables ===
+                      doctor.id;
 
-                    {/* Doctor */}
-                    <td className="py-3.5 px-6">
-                      <div className="flex items-center gap-3">
+                  return (
+                    <tr
+                      key={doctor.id}
+                      className="hover:bg-slate-50/50 transition-colors"
+                    >
 
-                        <img
-                          src={
-                            doctor.imageUrl ||
-                            'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150'
-                          }
-                          alt={doctorName}
-                          className="w-9 h-9 rounded-full object-cover border border-slate-100"
-                        />
+                      {/* Doctor */}
+                      <td className="py-3.5 px-6">
+                        <div className="flex items-center gap-3">
 
-                        <span className="font-semibold text-slate-800">
-                          {doctorName}
-                        </span>
+                          <div className="w-9 h-9 rounded-full overflow-hidden bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                            {doctor.imageUrl ? (
+                              <img
+                                src={
+                                  doctor.imageUrl
+                                }
+                                alt={
+                                  doctorName
+                                }
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-4 h-4 text-blue-500" />
+                            )}
+                          </div>
 
-                      </div>
-                    </td>
+                          <span className="font-semibold text-slate-800">
+                            {doctorName}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* Specialty */}
-                    <td className="py-3.5 px-6 text-slate-500 font-medium">
-                      {doctor.specialty}
-                    </td>
+                      {/* Specialty */}
+                      <td className="py-3.5 px-6 text-slate-500 font-medium">
+                        {doctor.specialty}
+                      </td>
 
-                    {/* Patients */}
-                    <td className="py-3.5 px-6 font-bold text-slate-800">
-                      150
-                    </td>
+                      {/* Consultation Fee */}
+                      <td className="py-3.5 px-6 font-semibold text-slate-700">
+                        $
+                        {Number(
+                          doctor.consultationFee
+                        ) || 0}
+                      </td>
 
-                    {/* Rating */}
-                    <td className="py-3.5 px-6">
-                      <div className="flex items-center gap-1 font-semibold text-slate-700">
+                      {/* Location */}
+                      <td className="py-3.5 px-6 text-slate-500 font-medium">
+                        {doctor.location ||
+                          'Not provided'}
+                      </td>
 
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-
-                        <span>
-                          4.9
-                        </span>
-
-                      </div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-3.5 px-6">
-
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
-                          isActive
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                            : doctor.status ===
-                                'ON_LEAVE'
-                              ? 'bg-amber-50 text-amber-600 border border-amber-100'
-                              : 'bg-slate-100 text-slate-600 border border-slate-200'
-                        }`}
-                      >
-                        {doctor.status}
-                      </span>
-
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3.5 px-6 text-right">
-
-                      <div className="flex items-center justify-end gap-2 text-slate-400">
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleOpenEdit(
-                              doctor
-                            )
-                          }
-                          className="p-1 hover:text-blue-600 transition-colors cursor-pointer"
-                          title="Edit Doctor"
+                      {/* Status */}
+                      <td className="py-3.5 px-6">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
+                            isActive
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                              : doctorStatus ===
+                                  'ON_LEAVE'
+                                ? 'bg-amber-50 text-amber-600 border border-amber-100'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                          }`}
                         >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
+                          {doctorStatus}
+                        </span>
+                      </td>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleDelete(
-                              doctor.id,
-                              doctorName
-                            )
-                          }
-                          className="p-1 hover:text-rose-500 transition-colors cursor-pointer"
-                          title="Delete Doctor"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      {/* Actions */}
+                      <td className="py-3.5 px-6 text-right">
+                        <div className="flex items-center justify-end gap-2 text-slate-400">
 
-                      </div>
+                          {/* Edit */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleOpenEdit(
+                                doctor
+                              )
+                            }
+                            disabled={
+                              isDeleting
+                            }
+                            className="p-1 hover:text-blue-600 transition-colors cursor-pointer disabled:opacity-40"
+                            title="Edit Doctor"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
 
-                    </td>
-
-                  </tr>
-                );
-              })}
-
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            disabled={
+                              isDeleting
+                            }
+                            onClick={() =>
+                              handleDelete(
+                                doctor.id,
+                                doctorName
+                              )
+                            }
+                            className="p-1 hover:text-rose-500 transition-colors cursor-pointer disabled:opacity-40"
+                            title="Delete Doctor"
+                          >
+                            {isDeleting ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+              )}
             </tbody>
-
           </table>
-
         </div>
       </div>
 
@@ -428,8 +541,13 @@ export default function DoctorsTable() {
               <button
                 type="button"
                 onClick={() => {
-                  setIsEditModalOpen(false);
-                  setSelectedDoctor(null);
+                  setIsEditModalOpen(
+                    false
+                  );
+
+                  setSelectedDoctor(
+                    null
+                  );
                 }}
                 className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
@@ -441,7 +559,9 @@ export default function DoctorsTable() {
               </h3>
 
               <form
-                onSubmit={handleSaveEdit}
+                onSubmit={
+                  handleSaveEdit
+                }
                 className="space-y-3 text-xs"
               >
 
@@ -457,11 +577,15 @@ export default function DoctorsTable() {
                     value={
                       editFormData.fullName
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       setEditFormData({
                         ...editFormData,
+
                         fullName:
-                          e.target.value,
+                          event.target
+                            .value,
                       })
                     }
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
@@ -480,11 +604,15 @@ export default function DoctorsTable() {
                     value={
                       editFormData.specialty
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       setEditFormData({
                         ...editFormData,
+
                         specialty:
-                          e.target.value,
+                          event.target
+                            .value,
                       })
                     }
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
@@ -494,6 +622,7 @@ export default function DoctorsTable() {
                 {/* Fee + Status */}
                 <div className="grid grid-cols-2 gap-3">
 
+                  {/* Fee */}
                   <div>
                     <label className="font-semibold text-slate-600 block mb-1">
                       Fee ($)
@@ -505,12 +634,16 @@ export default function DoctorsTable() {
                       value={
                         editFormData.consultationFee
                       }
-                      onChange={(e) =>
+                      onChange={(
+                        event
+                      ) =>
                         setEditFormData({
                           ...editFormData,
+
                           consultationFee:
                             Number(
-                              e.target.value
+                              event.target
+                                .value
                             ),
                         })
                       }
@@ -518,6 +651,7 @@ export default function DoctorsTable() {
                     />
                   </div>
 
+                  {/* Status */}
                   <div>
                     <label className="font-semibold text-slate-600 block mb-1">
                       Status
@@ -527,11 +661,14 @@ export default function DoctorsTable() {
                       value={
                         editFormData.status
                       }
-                      onChange={(e) =>
+                      onChange={(
+                        event
+                      ) =>
                         setEditFormData({
                           ...editFormData,
+
                           status:
-                            e.target
+                            event.target
                               .value as EditDoctorData['status'],
                         })
                       }
@@ -550,7 +687,6 @@ export default function DoctorsTable() {
                       </option>
                     </select>
                   </div>
-
                 </div>
 
                 {/* Location */}
@@ -564,11 +700,15 @@ export default function DoctorsTable() {
                     value={
                       editFormData.location
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       setEditFormData({
                         ...editFormData,
+
                         location:
-                          e.target.value,
+                          event.target
+                            .value,
                       })
                     }
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
@@ -598,12 +738,10 @@ export default function DoctorsTable() {
 
                   Save Changes
                 </button>
-
               </form>
             </div>
           </div>
         )}
-
     </div>
   );
 }

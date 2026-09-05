@@ -12,11 +12,7 @@ import { IBookingDoctor } from '@/interfaces/interfaces';
 
 interface BookingSummaryProps {
   doctor: IBookingDoctor;
-  selectedDate:
-    | Date
-    | string
-    | number
-    | null;
+  selectedDate: Date | string | number | null;
   selectedTime: string | null;
   patientName: string;
   onConfirm: () => void;
@@ -31,8 +27,7 @@ export default function BookingSummary({
   onConfirm,
   isSubmitting = false,
 }: BookingSummaryProps) {
-  const totalDue =
-    Number(doctor.fee) || 0;
+  const totalDue = Number(doctor.fee) || 0;
 
   const isReadyToBook =
     selectedDate !== null &&
@@ -41,25 +36,21 @@ export default function BookingSummary({
   const formatDate = (
     date: Date | string | number
   ) => {
-    try {
-      const d = new Date(date);
+    const parsedDate = new Date(date);
 
-      if (isNaN(d.getTime())) {
-        return 'Not selected';
-      }
-
-      return d.toLocaleDateString(
-        'en-US',
-        {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }
-      );
-    } catch {
+    if (Number.isNaN(parsedDate.getTime())) {
       return 'Not selected';
     }
+
+    return parsedDate.toLocaleDateString(
+      'en-US',
+      {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }
+    );
   };
 
   return (
@@ -95,8 +86,9 @@ export default function BookingSummary({
         </div>
       </div>
 
-      {/* Appointment Meta Details */}
+      {/* Appointment Details */}
       <div className="space-y-3 text-sm pb-4 border-b border-gray-100">
+        {/* Date */}
         <div className="flex items-center justify-between text-gray-600">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-400" />
@@ -111,13 +103,12 @@ export default function BookingSummary({
             }`}
           >
             {selectedDate
-              ? formatDate(
-                  selectedDate
-                )
+              ? formatDate(selectedDate)
               : 'Not selected'}
           </span>
         </div>
 
+        {/* Time */}
         <div className="flex items-center justify-between text-gray-600">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-gray-400" />
@@ -131,11 +122,11 @@ export default function BookingSummary({
                 : 'text-gray-300'
             }`}
           >
-            {selectedTime ||
-              'Not selected'}
+            {selectedTime || 'Not selected'}
           </span>
         </div>
 
+        {/* Location */}
         <div className="flex items-center justify-between text-gray-600">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-gray-400" />
@@ -147,6 +138,7 @@ export default function BookingSummary({
           </span>
         </div>
 
+        {/* Patient */}
         <div className="flex items-center justify-between text-gray-600">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-gray-400" />
@@ -162,9 +154,7 @@ export default function BookingSummary({
       {/* Price */}
       <div className="space-y-2 text-sm pt-1">
         <div className="flex items-center justify-between text-gray-600">
-          <span>
-            Consultation Fee
-          </span>
+          <span>Consultation Fee</span>
 
           <span className="font-semibold text-gray-900">
             ${doctor.fee}
@@ -199,9 +189,7 @@ export default function BookingSummary({
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>
-                Confirming...
-              </span>
+              <span>Confirming...</span>
             </>
           ) : (
             <span>
@@ -211,9 +199,7 @@ export default function BookingSummary({
         </button>
 
         <p className="text-center text-xs text-gray-400 font-medium">
-          Free cancellation up
-          to 24h before
-          appointment
+          Review your appointment details before confirming.
         </p>
       </div>
     </div>

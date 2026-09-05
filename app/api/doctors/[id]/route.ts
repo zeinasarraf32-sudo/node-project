@@ -25,7 +25,6 @@ export async function PUT(
 ) {
   try {
     const { id } = await context.params;
-
     const doctorId = Number(id);
 
     if (
@@ -146,7 +145,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
-
     const doctorId = Number(id);
 
     if (
@@ -164,19 +162,65 @@ export async function DELETE(
       );
     }
 
-    const doctor =
-      await prisma.doctor.delete({
+    /*
+     * Check that the doctor exists first.
+     */
+    const existingDoctor =
+      await prisma.doctor.findUnique({
         where: {
           id: doctorId,
         },
+
+        select: {
+          id: true,
+          fullName: true,
+        },
       });
+
+    if (!existingDoctor) {
+      return NextResponse.json(
+        {
+          status: 404,
+          message: 'Doctor not found',
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    /*
+     * Delete all appointments belonging
+     * to this doctor first, then delete
+     * the doctor.
+     *
+     * Both operations are inside one
+     * transaction.
+     */
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.appointment.deleteMany({
+          where: {
+            doctorId,
+          },
+        });
+
+        await tx.doctor.delete({
+          where: {
+            id: doctorId,
+          },
+        });
+      }
+    );
 
     return NextResponse.json(
       {
         status: 200,
-        data: doctor,
+        data: {
+          id: existingDoctor.id,
+        },
         message:
-          'Doctor deleted successfully',
+          'Doctor and related appointments deleted successfully',
       },
       {
         status: 200,

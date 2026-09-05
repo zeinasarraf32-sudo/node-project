@@ -1,21 +1,40 @@
-import { NextResponse } from 'next/server';
+import {
+  NextRequest,
+  NextResponse,
+} from 'next/server';
+
 import { prisma } from '@/lib/prisma';
 
-import { IDoctor } from '@/interfaces/interfaces';
-import {CreateDoctorBody} from '@/interfaces/interfaces';
+import {
+  DoctorStatus,
+} from '@prisma/client';
 
-export async function PUT (
-  request: Request, 
-  { params }: { params: Promise<{ id: string }> }
+interface UpdateDoctorBody {
+  fullName?: string;
+  specialty?: string;
+  consultationFee?: number | string;
+  status?: DoctorStatus;
+  location?: string | null;
+}
+
+export async function PUT(
+  request: NextRequest,
+  context: {
+    params: Promise<{ id: string }>;
+  }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
 
     const doctorId = Number(id);
 
-    if (Number.isNaN(doctorId)) {
+    if (
+      !Number.isInteger(doctorId) ||
+      doctorId <= 0
+    ) {
       return NextResponse.json(
         {
+          status: 400,
           message: 'Invalid doctor ID',
         },
         {
@@ -24,54 +43,93 @@ export async function PUT (
       );
     }
 
-    const body: CreateDoctorBody = await request.json();
+    const body =
+      (await request.json()) as UpdateDoctorBody;
 
     const {
       fullName,
-      email,
-      phone,
       specialty,
-      experienceYrs,
       consultationFee,
-      location,
-      imageUrl,
       status,
-    } = body as CreateDoctorBody;
+      location,
+    } = body;
 
-    const updatedDoctor = await prisma.doctor.update({
-      where: {
-        id: doctorId,
-      },
-      data: {
-        fullName: fullName.trim(),
-        email: email?.trim(),
-        phone: phone?.trim() || null,
-        specialty: specialty.trim(),
-        experienceYrs: Number(experienceYrs) || 0,
-        consultationFee: Number(consultationFee) || 0,
-        location: location?.trim() || null,
-        imageUrl:
-          typeof imageUrl === 'string' && imageUrl !== ''
-            ? imageUrl
-            : '',
-        status,
-      },
-    });
+    if (
+      status &&
+      !Object.values(
+        DoctorStatus
+      ).includes(status)
+    ) {
+      return NextResponse.json(
+        {
+          status: 400,
+          message:
+            'Invalid doctor status',
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const doctor =
+      await prisma.doctor.update({
+        where: {
+          id: doctorId,
+        },
+
+        data: {
+          ...(fullName !== undefined && {
+            fullName:
+              fullName.trim(),
+          }),
+
+          ...(specialty !== undefined && {
+            specialty:
+              specialty.trim(),
+          }),
+
+          ...(consultationFee !== undefined && {
+            consultationFee:
+              Number(
+                consultationFee
+              ) || 0,
+          }),
+
+          ...(status !== undefined && {
+            status,
+          }),
+
+          ...(location !== undefined && {
+            location:
+              location?.trim() ||
+              null,
+          }),
+        },
+      });
 
     return NextResponse.json(
       {
-        data: updatedDoctor,
+        status: 200,
+        data: doctor,
+        message:
+          'Doctor updated successfully',
       },
       {
         status: 200,
       }
     );
   } catch (error) {
-    console.error('Error updating doctor:', error);
+    console.error(
+      'Error updating doctor:',
+      error
+    );
 
     return NextResponse.json(
       {
-        message: 'Failed to update doctor',
+        status: 500,
+        message:
+          'Failed to update doctor',
       },
       {
         status: 500,
@@ -81,17 +139,23 @@ export async function PUT (
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  context: {
+    params: Promise<{ id: string }>;
+  }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
 
     const doctorId = Number(id);
 
-    if (Number.isNaN(doctorId)) {
+    if (
+      !Number.isInteger(doctorId) ||
+      doctorId <= 0
+    ) {
       return NextResponse.json(
         {
+          status: 400,
           message: 'Invalid doctor ID',
         },
         {
@@ -100,27 +164,35 @@ export async function DELETE(
       );
     }
 
-    await prisma.doctor.delete({
-      where: {
-        id: doctorId,
-      },
-    });
+    const doctor =
+      await prisma.doctor.delete({
+        where: {
+          id: doctorId,
+        },
+      });
 
     return NextResponse.json(
       {
         status: 200,
-        message: 'Doctor deleted successfully',
+        data: doctor,
+        message:
+          'Doctor deleted successfully',
       },
       {
         status: 200,
       }
     );
   } catch (error) {
-    console.error('Error deleting doctor:', error);
+    console.error(
+      'Error deleting doctor:',
+      error
+    );
 
     return NextResponse.json(
       {
-        message: 'Failed to delete doctor',
+        status: 500,
+        message:
+          'Failed to delete doctor',
       },
       {
         status: 500,

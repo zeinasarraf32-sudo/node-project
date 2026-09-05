@@ -73,9 +73,13 @@ export default function DoctorsTable() {
     mutationFn: (id: number) =>
       axiosDelete(`doctors/${id}`),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ['doctors'],
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ['admin-doctors-stats'],
       });
     },
   });
@@ -264,6 +268,7 @@ export default function DoctorsTable() {
                 </tr>
               )}
 
+              {/* Error */}
               {isError && (
                 <tr>
                   <td
@@ -355,7 +360,7 @@ export default function DoctorsTable() {
                           isActive
                             ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                             : doctor.status ===
-                              'ON_LEAVE'
+                                'ON_LEAVE'
                               ? 'bg-amber-50 text-amber-600 border border-amber-100'
                               : 'bg-slate-100 text-slate-600 border border-slate-200'
                         }`}

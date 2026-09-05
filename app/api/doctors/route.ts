@@ -1,36 +1,66 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { DoctorStatus } from '@prisma/client';
-import { CreateDoctorBody } from '@/interfaces/interfaces';
+import {
+  NextRequest,
+  NextResponse,
+} from 'next/server';
+
+import {
+  prisma,
+} from '@/lib/prisma';
+
+import {
+  DoctorStatus,
+} from '@prisma/client';
+
+import {
+  CreateDoctorBody,
+} from '@/interfaces/interfaces';
 
 export async function GET() {
   try {
-    const doctors = await prisma.doctor.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const doctors =
+      await prisma.doctor.findMany(
+        {
+          orderBy: {
+            createdAt:
+              'desc',
+          },
+        }
+      );
 
     return NextResponse.json(
       {
         status: 200,
         data: doctors,
       },
-      { status: 200 }
+      {
+        status: 200,
+      }
     );
   } catch (error) {
-    console.error('Prisma Get Doctors Error:', error);
+    console.error(
+      'Prisma Get Doctors Error:',
+      error
+    );
 
     return NextResponse.json(
-      { message: 'Failed to fetch doctors' },
-      { status: 500 }
+      {
+        status: 500,
+        message:
+          'Failed to fetch doctors',
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest
+) {
   try {
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const {
       fullName,
@@ -42,48 +72,115 @@ export async function POST(request: NextRequest) {
       consultationFee = 0,
       location = null,
       imageUrl = '',
-      status = DoctorStatus.ACTIVE,
-    } = body as CreateDoctorBody;
+      status =
+        DoctorStatus.ACTIVE,
+    } =
+      body as CreateDoctorBody;
 
-    if (!fullName || !email || !password || !specialty) {
+    if (
+      !fullName ||
+      !email ||
+      !password ||
+      !specialty
+    ) {
       return NextResponse.json(
-        { message: 'Full Name, email, password, and specialty are required' },
-        { status: 400 }
+        {
+          status: 400,
+          message:
+            'Full Name, email, password, and specialty are required',
+        },
+        {
+          status: 400,
+        }
       );
     }
 
-    if (!Object.values(DoctorStatus).includes(status)) {
+    if (
+      !Object.values(
+        DoctorStatus
+      ).includes(status)
+    ) {
       return NextResponse.json(
-        { message: 'Invalid doctor status' },
-        { status: 400 }
+        {
+          status: 400,
+          message:
+            'Invalid doctor status',
+        },
+        {
+          status: 400,
+        }
       );
     }
 
-    const doctor = await prisma.doctor.create({
-      data: {
-        fullName: fullName.trim(),
-        email: email.trim(),
-        password,
-        phone: phone?.trim() || null,
-        specialty: specialty.trim(),
-        experienceYrs: Number(experienceYrs) || 0,
-        consultationFee: Number(consultationFee) || 0,
-        location: location?.trim() || null,
-        imageUrl:
-          typeof imageUrl === 'string' && imageUrl !== ''
-            ? imageUrl
-            : '',
-        status,
-      },
-    });
+    const doctor =
+      await prisma.doctor.create(
+        {
+          data: {
+            fullName:
+              fullName.trim(),
 
-    return NextResponse.json(doctor, { status: 201 });
-  } catch (error) {
-    console.error('Prisma Create Doctor Error:', error);
+            email:
+              email.trim(),
+
+            password,
+
+            phone:
+              phone?.trim() ||
+              null,
+
+            specialty:
+              specialty.trim(),
+
+            experienceYrs:
+              Number(
+                experienceYrs
+              ) || 0,
+
+            consultationFee:
+              Number(
+                consultationFee
+              ) || 0,
+
+            location:
+              location?.trim() ||
+              null,
+
+            imageUrl:
+              typeof imageUrl ===
+                'string' &&
+              imageUrl !== ''
+                ? imageUrl
+                : '',
+
+            status,
+          },
+        }
+      );
 
     return NextResponse.json(
-      { message: 'Failed to create doctor' },
-      { status: 500 }
+      {
+        status: 201,
+        data: doctor,
+      },
+      {
+        status: 201,
+      }
+    );
+  } catch (error) {
+    console.error(
+      'Prisma Create Doctor Error:',
+      error
+    );
+
+    return NextResponse.json(
+      {
+        status: 500,
+        message:
+          'Failed to create doctor',
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

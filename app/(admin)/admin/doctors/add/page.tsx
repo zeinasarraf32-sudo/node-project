@@ -2,7 +2,11 @@
 
 import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+
 import {
   ArrowLeft,
   User,
@@ -32,31 +36,43 @@ export default function AddDoctorPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [selectedFileName, setSelectedFileName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [selectedFileName, setSelectedFileName] =
+    useState('');
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPassword, setShowPassword] =
+    useState(false);
 
-  const [formData, setFormData] = useState<IDoctor>({
-    fullName: '',
-    email: '',
-    password: '',
-    phone: '',
-    specialty: '',
-    experienceYrs: '',
-    consultationFee: '',
-    location: '',
-    imageUrl: '',
-    status: 'ACTIVE',
-  });
+  const fileInputRef =
+    useRef<HTMLInputElement>(null);
+
+  const [formData, setFormData] =
+    useState<IDoctor>({
+      fullName: '',
+      email: '',
+      password: '',
+      phone: '',
+      specialty: '',
+      experienceYrs: '',
+      consultationFee: '',
+      location: '',
+      imageUrl: '',
+      status: 'ACTIVE',
+    });
 
   const createMutation = useMutation({
     mutationFn: (values: IDoctor) =>
-      axiosPost<IDoctor, IDoctor>('doctors', values),
+      axiosPost<IDoctor, IDoctor>(
+        'doctors',
+        values
+      ),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ['doctors'],
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ['admin-doctors-stats'],
       });
 
       router.push('/admin');
@@ -64,7 +80,9 @@ export default function AddDoctorPage() {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement
+    >
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -106,7 +124,9 @@ export default function AddDoctorPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
 
     const payload: IDoctor = {
@@ -115,15 +135,26 @@ export default function AddDoctorPage() {
       password: formData.password?.trim(),
       phone: formData.phone?.trim(),
       specialty: formData.specialty.trim(),
+
       experienceYrs: formData.experienceYrs
         ? Number(formData.experienceYrs)
         : 0,
-      consultationFee: formData.consultationFee
-        ? Number(formData.consultationFee)
-        : 0,
-      location: formData.location?.trim(),
-      imageUrl: formData.imageUrl || undefined,
-      status: formData.status || 'ACTIVE',
+
+      consultationFee:
+        formData.consultationFee
+          ? Number(
+              formData.consultationFee
+            )
+          : 0,
+
+      location:
+        formData.location?.trim(),
+
+      imageUrl:
+        formData.imageUrl || undefined,
+
+      status:
+        formData.status || 'ACTIVE',
     };
 
     createMutation.mutate(payload);
@@ -131,10 +162,12 @@ export default function AddDoctorPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-10 px-4 sm:px-6 lg:px-8">
+
       <div className="max-w-3xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
+
           <button
             type="button"
             onClick={() => router.back()}
@@ -152,15 +185,20 @@ export default function AddDoctorPage() {
               Create a new doctor profile
             </p>
           </div>
+
         </div>
 
         {/* Form */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+
           <form
             onSubmit={handleSubmit}
             className="p-8 space-y-6"
           >
+
+            {/* Account */}
             <div>
+
               <h2 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Account Credentials
@@ -168,6 +206,7 @@ export default function AddDoctorPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
+                {/* Full Name */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Full Name *
@@ -188,6 +227,7 @@ export default function AddDoctorPage() {
                   </div>
                 </div>
 
+                {/* Email */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Email Address *
@@ -208,6 +248,7 @@ export default function AddDoctorPage() {
                   </div>
                 </div>
 
+                {/* Password */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Password *
@@ -217,7 +258,11 @@ export default function AddDoctorPage() {
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
 
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      type={
+                        showPassword
+                          ? 'text'
+                          : 'password'
+                      }
                       name="password"
                       required
                       value={formData.password}
@@ -228,7 +273,11 @@ export default function AddDoctorPage() {
 
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() =>
+                        setShowPassword(
+                          !showPassword
+                        )
+                      }
                       className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
                     >
                       {showPassword ? (
@@ -240,6 +289,7 @@ export default function AddDoctorPage() {
                   </div>
                 </div>
 
+                {/* Phone */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Phone Number
@@ -264,7 +314,9 @@ export default function AddDoctorPage() {
 
             <hr className="border-slate-100" />
 
+            {/* Doctor Profile */}
             <div>
+
               <h2 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Stethoscope className="w-4 h-4" />
                 Doctor Profile Attributes
@@ -272,6 +324,7 @@ export default function AddDoctorPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
+                {/* Specialty */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Specialty *
@@ -292,6 +345,7 @@ export default function AddDoctorPage() {
                   </div>
                 </div>
 
+                {/* Status */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Status
@@ -306,13 +360,22 @@ export default function AddDoctorPage() {
                       onChange={handleChange}
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
                     >
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="INACTIVE">INACTIVE</option>
-                      <option value="ON_LEAVE">ON_LEAVE</option>
+                      <option value="ACTIVE">
+                        ACTIVE
+                      </option>
+
+                      <option value="INACTIVE">
+                        INACTIVE
+                      </option>
+
+                      <option value="ON_LEAVE">
+                        ON_LEAVE
+                      </option>
                     </select>
                   </div>
                 </div>
 
+                {/* Experience */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Experience (Years)
@@ -325,7 +388,9 @@ export default function AddDoctorPage() {
                       type="number"
                       min="0"
                       name="experienceYrs"
-                      value={formData.experienceYrs}
+                      value={
+                        formData.experienceYrs
+                      }
                       onChange={handleChange}
                       placeholder="10"
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
@@ -333,6 +398,7 @@ export default function AddDoctorPage() {
                   </div>
                 </div>
 
+                {/* Fee */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Consultation Fee ($)
@@ -345,7 +411,9 @@ export default function AddDoctorPage() {
                       type="number"
                       min="0"
                       name="consultationFee"
-                      value={formData.consultationFee}
+                      value={
+                        formData.consultationFee
+                      }
                       onChange={handleChange}
                       placeholder="35"
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
@@ -357,6 +425,7 @@ export default function AddDoctorPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
 
+                {/* Location */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Location / Clinic
@@ -376,6 +445,7 @@ export default function AddDoctorPage() {
                   </div>
                 </div>
 
+                {/* Profile Image */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Profile Image
@@ -390,9 +460,12 @@ export default function AddDoctorPage() {
                   />
 
                   <div className="flex items-center gap-3 py-1">
+
                     <button
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() =>
+                        fileInputRef.current?.click()
+                      }
                       className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-semibold hover:bg-blue-100 transition-all cursor-pointer border border-blue-200/60 shadow-sm active:scale-95 shrink-0"
                     >
                       <Upload className="w-3.5 h-3.5" />
@@ -400,19 +473,24 @@ export default function AddDoctorPage() {
                     </button>
 
                     <div className="flex items-center gap-2 text-xs text-slate-500 truncate select-none">
+
                       <span className="truncate max-w-[180px]">
-                        {selectedFileName || 'No file chosen'}
+                        {selectedFileName ||
+                          'No file chosen'}
                       </span>
 
                       {selectedFileName && (
                         <button
                           type="button"
-                          onClick={handleRemoveImage}
+                          onClick={
+                            handleRemoveImage
+                          }
                           className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-rose-500 cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
                       )}
+
                     </div>
                   </div>
                 </div>
@@ -423,12 +501,15 @@ export default function AddDoctorPage() {
             {/* Error */}
             {createMutation.error && (
               <p className="text-xs text-rose-500">
-                {errorMessage(createMutation.error)}
+                {errorMessage(
+                  createMutation.error
+                )}
               </p>
             )}
 
             {/* Buttons */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -439,7 +520,9 @@ export default function AddDoctorPage() {
 
               <button
                 type="submit"
-                disabled={createMutation.isPending}
+                disabled={
+                  createMutation.isPending
+                }
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {createMutation.isPending ? (
@@ -447,10 +530,13 @@ export default function AddDoctorPage() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Create Doctor Profile</span>
+                    <span>
+                      Create Doctor Profile
+                    </span>
                   </>
                 )}
               </button>
+
             </div>
 
           </form>

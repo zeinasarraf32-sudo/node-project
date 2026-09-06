@@ -3,7 +3,7 @@ import { buildUrl } from '@/lib/baseUrl'
 import axios from 'axios'
 
 export const api = axios.create({
-  baseURL: buildUrl('api'),
+  baseURL: typeof window !== 'undefined' ? '/api' : buildUrl('api'),
   withCredentials: true,
 })
 

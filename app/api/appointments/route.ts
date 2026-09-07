@@ -290,6 +290,7 @@ export async function POST(
     /*
      * Check the time slot before create.
      */
+    // الآن نصل إلى أهم جزء: هل الـTime Slot محجوز؟
     const existingAppointment =
       await prisma.appointment.findFirst({
         where: {

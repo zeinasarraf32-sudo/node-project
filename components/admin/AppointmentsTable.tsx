@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
+
 import {
   MoreVertical,
   CalendarDays,
   Check,
   Loader2,
+  Trash2,
 } from 'lucide-react';
+
 import {
   useMutation,
   useQuery,
@@ -16,6 +19,7 @@ import {
 import {
   axiosGet,
   axiosPut,
+  axiosDelete,
 } from '@/lib/axios';
 
 import LoadingState from '@/components/ui/LoadingState';
@@ -74,7 +78,9 @@ export default function AppointmentsTable() {
   const queryClient = useQueryClient();
 
   const [activeFilter, setActiveFilter] =
-    useState<(typeof filterTabs)[number]>('All');
+    useState<(typeof filterTabs)[number]>(
+      'All'
+    );
 
   const [openMenuId, setOpenMenuId] =
     useState<number | null>(null);
@@ -82,6 +88,9 @@ export default function AppointmentsTable() {
   const [updateError, setUpdateError] =
     useState('');
 
+  /*
+   * GET all appointments.
+   */
   const {
     data: appointments = [],
     isLoading,
@@ -89,58 +98,102 @@ export default function AppointmentsTable() {
     error,
   } = useQuery({
     queryKey: ['appointments'],
+
     queryFn: async () => {
       const response =
-        await axiosGet<AdminAppointment[]>(
-          'appointments'
-        );
+        await axiosGet<
+          AdminAppointment[]
+        >('appointments');
 
       return response.data || [];
     },
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({
-      appointmentId,
-      status,
-    }: {
-      appointmentId: number;
-      status: AppointmentStatus;
-    }) => {
-      return axiosPut<
-        UpdateAppointmentBody,
-        AdminAppointment
-      >(
-        `appointments/${appointmentId}`,
-        {
-          status,
-        }
-      );
-    },
+  /*
+   * Update appointment status.
+   */
+  const updateStatusMutation =
+    useMutation({
+      mutationFn: async ({
+        appointmentId,
+        status,
+      }: {
+        appointmentId: number;
+        status: AppointmentStatus;
+      }) => {
+        return axiosPut<
+          UpdateAppointmentBody,
+          AdminAppointment
+        >(
+          `appointments/${appointmentId}`,
+          {
+            status,
+          }
+        );
+      },
 
-    onSuccess: async () => {
-      setUpdateError('');
-      setOpenMenuId(null);
+      onSuccess: async () => {
+        setUpdateError('');
+        setOpenMenuId(null);
 
-      await queryClient.invalidateQueries({
-        queryKey: ['appointments'],
-      });
-    },
+        await queryClient.invalidateQueries({
+          queryKey: ['appointments'],
+        });
+      },
 
-    onError: (error) => {
-      console.error(
-        'Failed to update appointment status:',
-        error
-      );
+      onError: (error) => {
+        console.error(
+          'Failed to update appointment status:',
+          error
+        );
 
-      setUpdateError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to update appointment status'
-      );
-    },
-  });
+        setUpdateError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to update appointment status'
+        );
+      },
+    });
 
+  /*
+   * Delete appointment.
+   */
+  const deleteAppointmentMutation =
+    useMutation({
+      mutationFn: async (
+        appointmentId: number
+      ) => {
+        return axiosDelete(
+          `appointments/${appointmentId}`
+        );
+      },
+
+      onSuccess: async () => {
+        setUpdateError('');
+        setOpenMenuId(null);
+
+        await queryClient.invalidateQueries({
+          queryKey: ['appointments'],
+        });
+      },
+
+      onError: (error) => {
+        console.error(
+          'Failed to delete appointment:',
+          error
+        );
+
+        setUpdateError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete appointment'
+        );
+      },
+    });
+
+  /*
+   * Change appointment status.
+   */
   const handleStatusChange = (
     appointmentId: number,
     status: AppointmentStatus
@@ -153,18 +206,49 @@ export default function AppointmentsTable() {
     });
   };
 
-  const filteredAppointments =
-    appointments.filter((appointment) => {
-      if (activeFilter === 'All') {
-        return true;
-      }
-
-      return (
-        appointment.status ===
-        activeFilter.toUpperCase()
+  /*
+   * Delete appointment.
+   */
+  const handleDeleteAppointment = (
+    appointmentId: number
+  ) => {
+    const confirmed =
+      window.confirm(
+        'Are you sure you want to delete this appointment?'
       );
-    });
 
+    if (!confirmed) {
+      return;
+    }
+
+    setUpdateError('');
+    setOpenMenuId(null);
+
+    deleteAppointmentMutation.mutate(
+      appointmentId
+    );
+  };
+
+  /*
+   * Filter appointments.
+   */
+  const filteredAppointments =
+    appointments.filter(
+      (appointment) => {
+        if (activeFilter === 'All') {
+          return true;
+        }
+
+        return (
+          appointment.status ===
+          activeFilter.toUpperCase()
+        );
+      }
+    );
+
+  /*
+   * Status badge color.
+   */
   const getStatusBadgeClass = (
     status: AppointmentStatus
   ) => {
@@ -186,6 +270,9 @@ export default function AppointmentsTable() {
     }
   };
 
+  /*
+   * Status text color in menu.
+   */
   const getStatusMenuClass = (
     status: AppointmentStatus
   ) => {
@@ -207,6 +294,9 @@ export default function AppointmentsTable() {
     }
   };
 
+  /*
+   * CONFIRMED -> Confirmed
+   */
   const formatStatus = (
     status: AppointmentStatus
   ) => {
@@ -216,16 +306,22 @@ export default function AppointmentsTable() {
     );
   };
 
+  /*
+   * Format appointment date.
+   */
   const formatDateTime = (
     date: string,
     time: string
   ) => {
     const formattedDate =
-      new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      }).format(new Date(date));
+      new Intl.DateTimeFormat(
+        'en-US',
+        {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }
+      ).format(new Date(date));
 
     return `${formattedDate}, ${time}`;
   };
@@ -257,37 +353,47 @@ export default function AppointmentsTable() {
           </h3>
 
           <p className="text-[11px] text-slate-400 mt-1">
-            {appointments.length} appointments in database
+            {appointments.length}{' '}
+            appointments in database
           </p>
         </div>
 
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-1 bg-slate-50/80 p-1 rounded-xl text-xs font-medium text-slate-600 border border-slate-100">
-          {filterTabs.map((filter) => (
-            <button
-              key={filter}
-              onClick={() =>
-                setActiveFilter(filter)
-              }
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeFilter === filter
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'hover:text-slate-900 hover:bg-slate-100/60'
-              }`}
-            >
-              {filter}
-            </button>
-          ))}
+          {filterTabs.map(
+            (filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() =>
+                  setActiveFilter(
+                    filter
+                  )
+                }
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeFilter ===
+                  filter
+                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                    : 'hover:text-slate-900 hover:bg-slate-100/60'
+                }`}
+              >
+                {filter}
+              </button>
+            )
+          )}
         </div>
       </div>
 
-      {/* Update Error */}
+      {/* Error */}
       {updateError && (
         <div className="mx-5 mt-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-xs font-medium text-red-600">
           {updateError}
         </div>
       )}
 
-      {filteredAppointments.length === 0 ? (
+      {/* Empty State */}
+      {filteredAppointments.length ===
+      0 ? (
         <div className="py-14 flex flex-col items-center justify-center text-center">
           <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
             <CalendarDays className="w-5 h-5 text-slate-400" />
@@ -298,12 +404,14 @@ export default function AppointmentsTable() {
           </p>
 
           <p className="text-xs text-slate-400 mt-1">
-            There are no appointments matching this filter.
+            There are no appointments
+            matching this filter.
           </p>
         </div>
       ) : (
         <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full text-left border-collapse">
+
             <thead>
               <tr className="border-b border-slate-100 text-[11px] font-semibold text-slate-400 tracking-wider">
                 <th className="py-4 px-6">
@@ -335,9 +443,11 @@ export default function AppointmentsTable() {
                     key={appointment.id}
                     className="hover:bg-slate-50/50 transition-colors"
                   >
+
                     {/* Patient */}
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
+
                         <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center border border-blue-100">
                           {appointment.patient.fullName
                             .charAt(0)
@@ -346,11 +456,19 @@ export default function AppointmentsTable() {
 
                         <div>
                           <span className="block font-semibold text-slate-800">
-                            {appointment.patient.fullName}
+                            {
+                              appointment
+                                .patient
+                                .fullName
+                            }
                           </span>
 
                           <span className="text-[10px] text-slate-400">
-                            {appointment.patient.email}
+                            {
+                              appointment
+                                .patient
+                                .email
+                            }
                           </span>
                         </div>
                       </div>
@@ -359,11 +477,20 @@ export default function AppointmentsTable() {
                     {/* Doctor */}
                     <td className="py-4 px-6">
                       <span className="font-medium text-slate-700">
-                        Dr. {appointment.doctor.fullName}
+                        Dr.{' '}
+                        {
+                          appointment
+                            .doctor
+                            .fullName
+                        }
                       </span>
 
                       <span className="block text-[10px] text-slate-400 mt-0.5">
-                        {appointment.doctor.specialty}
+                        {
+                          appointment
+                            .doctor
+                            .specialty
+                        }
                       </span>
                     </td>
 
@@ -390,9 +517,35 @@ export default function AppointmentsTable() {
 
                     {/* Actions */}
                     <td className="py-4 px-6 text-right">
-                      <div className="relative inline-block text-left">
+                      <div className="relative inline-flex items-center justify-end gap-1">
+
+                        {/* Delete button */}
                         <button
                           type="button"
+                          title="Delete appointment"
+                          disabled={
+                            deleteAppointmentMutation.isPending
+                          }
+                          onClick={() =>
+                            handleDeleteAppointment(
+                              appointment.id
+                            )
+                          }
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        >
+                          {deleteAppointmentMutation.isPending &&
+                          deleteAppointmentMutation.variables ===
+                            appointment.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+
+                        {/* Three dots */}
+                        <button
+                          type="button"
+                          title="Change status"
                           onClick={() =>
                             setOpenMenuId(
                               openMenuId ===
@@ -406,9 +559,11 @@ export default function AppointmentsTable() {
                           <MoreVertical className="w-4 h-4" />
                         </button>
 
+                        {/* Status Menu */}
                         {openMenuId ===
                           appointment.id && (
                           <div className="absolute right-0 top-8 z-50 w-44 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden text-left">
+
                             <div className="px-3 py-2 border-b border-slate-100">
                               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                                 Change Status
@@ -417,23 +572,29 @@ export default function AppointmentsTable() {
 
                             <div className="p-1">
                               {statusOptions.map(
-                                (status) => {
+                                (
+                                  status
+                                ) => {
                                   const isCurrent =
                                     appointment.status ===
                                     status;
 
                                   const isUpdating =
                                     updateStatusMutation.isPending &&
-                                    updateStatusMutation.variables
+                                    updateStatusMutation
+                                      .variables
                                       ?.appointmentId ===
                                       appointment.id &&
-                                    updateStatusMutation.variables
+                                    updateStatusMutation
+                                      .variables
                                       ?.status ===
                                       status;
 
                                   return (
                                     <button
-                                      key={status}
+                                      key={
+                                        status
+                                      }
                                       type="button"
                                       disabled={
                                         isCurrent ||

@@ -136,3 +136,9 @@ export interface Appointment {
     location: string | null;
   };
 }
+
+export  interface SignupBody {
+  fullName: string;
+  email: string;
+  password: string;
+}

@@ -9,6 +9,8 @@ import {
   DoctorStatus,
 } from '@prisma/client';
 
+
+// هذه تحدد الشكل المتوقع للـRequest Body في عملية Update Doctor.
 interface UpdateDoctorBody {
   fullName?: string;
   specialty?: string;
@@ -43,7 +45,7 @@ export async function PUT(
     }
 
     const body =
-      (await request.json()) as UpdateDoctorBody;
+      await request.json();
 
     const {
       fullName,
@@ -51,7 +53,8 @@ export async function PUT(
       consultationFee,
       status,
       location,
-    } = body;
+    } =
+      body as UpdateDoctorBody;
 
     if (
       status &&
@@ -162,16 +165,14 @@ export async function DELETE(
       );
     }
 
-    /*
-     * Check that the doctor exists first.
-     */
+    // عم اتأكد اذا المريض موجود قبل ما احاول احذفه
     const existingDoctor =
       await prisma.doctor.findUnique({
         where: {
           id: doctorId,
         },
 
-        select: {
+        select: {     // عندما تجد الـDoctor، أرجع لي فقط id وfullName
           id: true,
           fullName: true,
         },
@@ -189,14 +190,7 @@ export async function DELETE(
       );
     }
 
-    /*
-     * Delete all appointments belonging
-     * to this doctor first, then delete
-     * the doctor.
-     *
-     * Both operations are inside one
-     * transaction.
-     */
+   // عند حذف Doctor عندي أكثر من Database operation مرتبطة ببعض، لذلك أضعها داخل transaction حتى تنجح كلها معًا
     await prisma.$transaction(
       async (tx) => {
         await tx.appointment.deleteMany({

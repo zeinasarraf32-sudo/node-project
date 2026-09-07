@@ -139,6 +139,7 @@ export async function DELETE(
       );
     }
 
+    // عم اتأكد اذا المريض موجود قبل ما احاول احذفه
     const patient =
       await prisma.patient.findUnique({
         where: {
@@ -163,13 +164,7 @@ export async function DELETE(
       );
     }
 
-    /*
-     * Delete appointments first,
-     * then delete the patient.
-     *
-     * Transaction ensures that both
-     * operations succeed together.
-     */
+    //أستخدم Database Transaction لأن عندي عمليتين مرتبطتين وأريد أن تنجحا معًا أو تفشلا معًا. 
     await prisma.$transaction(
       async (tx) => {
         await tx.appointment.deleteMany({

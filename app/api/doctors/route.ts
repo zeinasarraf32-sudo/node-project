@@ -62,6 +62,7 @@ export async function POST(
     const body =
       await request.json();
 
+    // يعني بدل ما أكتب كل مرة body.fullName وbody.email، أستخرج الـfields وأضع كل واحدة في variable مستقل.
     const {
       fullName,
       email,

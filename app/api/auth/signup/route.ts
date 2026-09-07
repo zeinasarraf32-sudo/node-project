@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { SignupBody } from '@/interfaces/interfaces';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,7 +10,7 @@ export async function POST(request: NextRequest) {
       fullName,
       email,
       password,
-    } = body;
+    } = body as SignupBody;
 
     // التحقق من البيانات المطلوبة
     if (!fullName || !email || !password) {
@@ -37,12 +38,12 @@ export async function POST(request: NextRequest) {
 
     // إنشاء Patient
     const patient = await prisma.patient.create({
-  data: {
-    fullName: fullName.trim(),
-    email: email.trim().toLowerCase(),
-    password,
-  },
-});
+      data: {
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      },
+    });
 
     return NextResponse.json(
       {

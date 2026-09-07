@@ -1,11 +1,5 @@
 // prisma/schema.prisma
 
-// prisma/schema.prisma
-
-// prisma/schema.prisma
-
-// prisma/schema.prisma
-
 datasource db {
   provider = "postgresql"
 }
@@ -13,6 +7,7 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
 // ==========================================
 // ENUMS
 // ==========================================
@@ -35,88 +30,67 @@ enum DoctorStatus {
 // ==========================================
 
 model Patient {
-  id              Int              @id @default(autoincrement())
-  imageUrl        String?
-  condition       String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  email           String           @unique
-  fullName        String
-  password        String
-  phone           String?
-  aiConversations AiConversation[]
-  appointments    Appointment[]
-  reviews         DoctorReview[]
+  id        Int     @id @default(autoincrement())
+  imageUrl  String?
+  condition String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email    String  @unique
+  fullName String
+  password String
+  phone    String?
+
+  appointments Appointment[]
 }
+
+// ==========================================
+// DOCTOR
+// ==========================================
 
 model Doctor {
-  id              Int              @id @default(autoincrement())
+  id Int @id @default(autoincrement())
+
   specialty       String
-  experienceYrs   Int              @default(0)
-  consultationFee Float            @default(0.0)
+  experienceYrs   Int          @default(0)
+  consultationFee Float        @default(0.0)
   location        String?
   imageUrl        String?
-  status          DoctorStatus     @default(ACTIVE)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  email           String           @unique
-  fullName        String
-  password        String
-  phone           String?
-  aiConversations AiConversation[]
-  appointments    Appointment[]
-  reviews         DoctorReview[]
-  schedules       DoctorSchedule[]
+  status          DoctorStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email    String  @unique
+  fullName String
+  password String
+  phone    String?
+
+  appointments Appointment[]
 }
 
-model DoctorSchedule {
-  id                  Int      @id @default(autoincrement())
-  doctorId            Int
-  dayOfWeek           Int
-  startTime           String
-  endTime             String
-  slotDurationMinutes Int      @default(30)
-  createdAt           DateTime @default(now())
-  doctor              Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-}
+// ==========================================
+// APPOINTMENT
+// ==========================================
 
 model Appointment {
-  id        Int               @id @default(autoincrement())
+  id Int @id @default(autoincrement())
+
   patientId Int
   doctorId  Int
-  date      DateTime
-  time      String
-  reason    String
-  status    AppointmentStatus @default(PENDING)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  doctor    Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  patient   Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  date   DateTime
+  time   String
+  reason String
+
+  status AppointmentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  doctor  Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   @@unique([doctorId, date, time])
 }
-
-model DoctorReview {
-  id        Int      @id @default(autoincrement())
-  patientId Int
-  doctorId  Int
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-
-  @@unique([patientId, doctorId])
-}
-
-model AiConversation {
-  id                  Int      @id @default(autoincrement())
-  patientId           Int
-  recommendedDoctorId Int?
-  userInput           String
-  aiResponse          String
-  createdAt           DateTime @default(now())
-  patient             Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  recommendedDoctor   Doctor?  @relation(fields: [recommendedDoctorId], references: [id])
-}
-

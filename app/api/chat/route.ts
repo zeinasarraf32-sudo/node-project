@@ -1,11 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import {
+  NextRequest,
+  NextResponse,
+} from 'next/server';
 
 import {
   getOpenAI,
   CHAT_SYSTEM_PROMPT,
 } from '@/lib/openai';
 
-import { IChatMessage } from '@/interfaces/interfaces';
+import {
+  IChatMessage,
+} from '@/interfaces/interfaces';
 
 const MAX_MESSAGES = 20;
 const MAX_CONTENT_LENGTH = 2000;
@@ -13,11 +18,16 @@ const MAX_CONTENT_LENGTH = 2000;
 function sanitizeMessages(
   input: unknown
 ): IChatMessage[] | null {
-  if (!Array.isArray(input) || input.length === 0) {
+  if (
+    !Array.isArray(input) ||
+    input.length === 0
+  ) {
     return null;
   }
 
-  if (input.length > MAX_MESSAGES) {
+  if (
+    input.length > MAX_MESSAGES
+  ) {
     return null;
   }
 
@@ -28,9 +38,11 @@ function sanitizeMessages(
       !entry ||
       (entry.role !== 'user' &&
         entry.role !== 'assistant') ||
-      typeof entry.content !== 'string' ||
+      typeof entry.content !==
+        'string' ||
       entry.content.length === 0 ||
-      entry.content.length > MAX_CONTENT_LENGTH
+      entry.content.length >
+        MAX_CONTENT_LENGTH
     ) {
       return null;
     }
@@ -44,58 +56,111 @@ function sanitizeMessages(
   return messages;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest
+) {
   try {
-    const body = await request.json();
+    const body =
+      await request.json();
 
-    const messages = sanitizeMessages(
-      body?.messages
-    );
+    const messages =
+      sanitizeMessages(
+        body?.messages
+      );
 
     if (!messages) {
-      return NextResponse.json({
-        status: 400,
-        message:
-          `messages is required: an array of 1-${MAX_MESSAGES} ` +
-          `{ role: "user" | "assistant", content: string } entries, ` +
-          `each content up to ${MAX_CONTENT_LENGTH} characters`,
-      });
+      return NextResponse.json(
+        {
+          status: 400,
+          message:
+            `messages is required: an array of 1-${MAX_MESSAGES} ` +
+            `{ role: "user" | "assistant", content: string } entries, ` +
+            `each content up to ${MAX_CONTENT_LENGTH} characters`,
+        },
+        {
+          status: 400,
+        }
+      );
     }
 
     const completion =
-      await getOpenAI().chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: CHAT_SYSTEM_PROMPT,
-          },
-          ...messages.map((message) => ({
-            role: message.role,
-            content: message.content,
-          })),
-        ],
-      });
+      await getOpenAI()
+        .chat.completions.create({
+          model: 'gpt-4o-mini',
+
+          messages: [
+            {
+              role: 'system',
+              content:
+                CHAT_SYSTEM_PROMPT,
+            },
+
+            ...messages.map(
+              (message) => ({
+                role:
+                  message.role,
+                content:
+                  message.content,
+              })
+            ),
+          ],
+        });
 
     const reply =
-      completion.choices[0]?.message?.content ?? '';
+      completion.choices[0]
+        ?.message
+        ?.content ?? '';
 
-    return NextResponse.json({
-      status: 200,
-      data: {
-        reply,
+    return NextResponse.json(
+      {
+        status: 200,
+        data: {
+          reply,
+        },
       },
-    });
-  } catch (error) {
+      {
+        status: 200,
+      }
+    );
+  } catch (error: unknown) {
     console.error(
       'Failed to get chat completion:',
       error
     );
 
-    return NextResponse.json({
-      status: 500,
-      message:
-        'Failed to get a reply from the assistant',
-    });
+    /*
+     * OpenAI quota / credits error.
+     */
+    if (
+      error &&
+      typeof error === 'object' &&
+      'status' in error &&
+      error.status === 429
+    ) {
+      return NextResponse.json(
+        {
+          status: 429,
+          message:
+            'AI service is currently unavailable because the API quota has been exhausted.',
+        },
+        {
+          status: 429,
+        }
+      );
+    }
+
+    /*
+     * Unexpected server error.
+     */
+    return NextResponse.json(
+      {
+        status: 500,
+        message:
+          'Failed to get a reply from the assistant',
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }

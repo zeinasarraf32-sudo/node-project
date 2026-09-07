@@ -79,8 +79,9 @@ export default function AddDoctorPage() {
    */
   const createMutation = useMutation({
     mutationFn: (values: IDoctor) =>
-      axiosPost<IDoctor, IDoctor>(
-        'doctors',
+      axiosPost<IDoctor, IDoctor>(  // هنا يتم فعليًا إرسال الـHTTP request.
+                                    // axiosPost <Request Body Type,Response Data Type>
+        'doctors',  // /api/doctors
         values
       ),
 
@@ -164,7 +165,7 @@ export default function AddDoctorPage() {
   const handleSubmit = (
     event: React.FormEvent<HTMLFormElement>
   ) => {
-    event.preventDefault();
+    event.preventDefault();  // ممكن الـform تعمل reload للصفحة وتخرب الـSPA flow.
 
     const fullName = formData.fullName.trim();
     const email = formData.email.trim();
@@ -180,7 +181,7 @@ export default function AddDoctorPage() {
       return;
     }
 
-    const payload: IDoctor = {
+    const payload: IDoctor = {    // أحدد نوعه IDoctor حتى TypeScript تتأكد أن شكله مطابق للinterface.
       fullName,
       email,
       password,
